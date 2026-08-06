@@ -1,0 +1,79 @@
+/* Rendering optimizations — preserve the complete visual design. */
+.page { contain: style; }
+
+/* Give each full-page scene its own paint boundary. This keeps animated
+   filters and glows from invalidating the rest of the document. */
+#admin,
+#election,
+#sports {
+  isolation: isolate;
+}
+
+/* Hidden pages and background tabs do not need to keep painting animations. */
+.page:not(.active),
+.page:not(.active) *,
+.page-inactive *,
+.is-offscreen *,
+.admin-offscreen *,
+.perf-offscreen,
+.perf-offscreen * {
+  animation-play-state: paused !important;
+}
+
+/* Skip layout/paint work for long sections until they approach the viewport. */
+.student-section,
+.admin-panel,
+.attendance-print-report,
+.hall-of-glory,
+.arena-control,
+.sports-closing,
+.moment-wall,
+#committeeMembers {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
+}
+
+/* Long result pages contain many independent animated cards. Off-screen
+   cards retain their animation state but are not laid out or painted until
+   they approach the viewport. */
+.sport-result-card,
+.sport-builder-card,
+.candidate-hero,
+.room-map-host,
+.prophecy-stage,
+.room-summary {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 460px;
+}
+
+.olympic-living-world,
+.admin-cosmos,
+.result-cinematic {
+  contain: strict;
+}
+
+/* Promote only continuously transformed visual layers. */
+.crest,
+.crest-burst,
+.sun-rays,
+.orbit,
+.spark,
+.sticker,
+.olympic-aurora,
+.stadium-beam,
+.wow-stage-effects,
+.admin-aurora,
+.reactor-halo,
+.living-cosmos,
+.moment-tile {
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+img {
+  content-visibility: auto;
+}
+
+@supports (interpolate-size: allow-keywords) {
+  html { interpolate-size: allow-keywords; }
+}

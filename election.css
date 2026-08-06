@@ -1,0 +1,610 @@
+﻿.election-notice{max-width:720px;margin:28px auto;padding:58px 30px;text-align:center;border:1px solid #e7cc68;border-radius:30px;background:radial-gradient(circle at 50% 0,#fff1a3,transparent 42%),#fffdf5;box-shadow:0 22px 70px #99720d26}.notice-icon{width:76px;height:76px;margin:auto;display:grid;place-items:center;border-radius:50%;background:#2b271b;color:#ffd337;font-size:38px;box-shadow:0 0 0 12px #f8c92821}.election-notice small{display:block;margin-top:25px;letter-spacing:3px;color:#a87900}.election-notice h3{font-size:34px;margin:6px}.election-notice p{color:#6d6243}.election-notice>span{font-size:12px;color:#998e70}
+.election-register{display:grid;grid-template-columns:.9fr 1.1fr;max-width:970px;margin:20px auto 60px;overflow:hidden;border-radius:34px;background:#201d14;box-shadow:0 35px 90px #6e500536}.register-visual{position:relative;min-height:570px;padding:50px;color:#fff8d8;overflow:hidden;background:radial-gradient(circle at 85% 18%,#ffc91966,transparent 25%),linear-gradient(145deg,#17150e,#493b12)}.register-visual:after{content:"";position:absolute;inset:-30%;background:repeating-conic-gradient(from 0deg,transparent 0 12deg,#ffcf2710 12deg 14deg);animation:slowSpin 30s linear infinite}.register-kicker{letter-spacing:4px;font-size:12px;color:#ffd75c}.register-orbit{position:relative;z-index:1;width:230px;aspect-ratio:1;margin:34px auto;border:1px solid #ffde7066;border-radius:50%;display:grid;place-items:center;text-align:center}.register-orbit:before,.register-orbit:after{content:"";position:absolute;inset:18px;border:1px dashed #ffde7055;border-radius:50%;animation:slowSpin 18s linear infinite}.register-orbit:after{inset:-18px;animation-direction:reverse}.register-orbit i{position:absolute;top:-12px;font-size:26px;color:#ffd42f}.register-orbit b{font-size:28px;line-height:1.15}.register-visual h3{position:relative;z-index:1;font-size:44px;line-height:1.05;margin:0}.register-visual h3 em{color:#ffd43c;font-family:"DM Serif Display";font-weight:400}.register-visual p{position:relative;z-index:1;color:#d7cdab}.election-login{margin:0;max-width:none;border:0;border-radius:0;padding:62px 48px;background:#fffdf7}.step-chip{display:inline-block;padding:7px 12px;border-radius:20px;background:#fff0ad;color:#7c5a00;font-size:12px;font-weight:600}.step-chip.light{background:#ffffff1c;color:#ffe88c;border:1px solid #ffe88c42}.election-action{width:100%;display:flex;justify-content:space-between;margin-top:10px}
+.candidate-showcase{position:relative;margin:10px calc(50% - 50vw) 40px;padding:55px max(24px,calc((100vw - 1132px)/2));color:#fff8d4;text-align:center;overflow:hidden;background:radial-gradient(circle at 50% 22%,#dd9f1238,transparent 27%),linear-gradient(145deg,#0d0c09,#29220f 58%,#0e0d09)}.candidate-showcase:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(105deg,transparent 0 80px,#ffd63b0a 81px 82px)}.showcase-stars{font-size:26px;letter-spacing:25px;color:#ffd84b;animation:glimmer 2s ease-in-out infinite}.candidate-showcase h3{position:relative;font-size:clamp(45px,7vw,92px);line-height:.82;letter-spacing:-3px;margin:25px 0}.candidate-showcase h3 em{font-family:"DM Serif Display";font-weight:400;color:#ffca27}.showcase-lead{position:relative;color:#d4c9a5}.candidate-stage{position:relative;display:flex;justify-content:center;gap:20px;margin:45px 0 38px;flex-wrap:wrap}.candidate-hero{position:relative;width:min(340px,100%);min-height:490px;border:1px solid #ffe88638;border-radius:170px 170px 24px 24px;overflow:hidden;background:linear-gradient(180deg,#ffce2b22,#ffffff0a);animation:candidateRise .8s calc(var(--candidate-index)*.15s) both}.candidate-number{position:absolute;top:35px;left:15px;font:italic 800 100px/1 Kanit;color:#fff1aa14}.candidate-photo{position:relative;height:285px;margin:26px 28px 0;border-radius:145px 145px 18px 18px;overflow:hidden;background:radial-gradient(circle,#fbd75c,#a86f06)}.candidate-photo img{width:100%;height:100%;object-fit:cover}.candidate-initial{height:100%;display:grid;place-items:center;font-size:110px;font-weight:800;color:#fff8c7}.candidate-copy{position:relative;padding:25px}.candidate-copy small{color:#ffda50}.candidate-copy h4{font-size:25px;margin:5px}.candidate-copy p{font-size:14px;color:#d4caab;line-height:1.6}.showcase-next{position:relative;border:0;border-radius:50px;padding:15px 23px;background:#ffd136;color:#242014;font:600 16px Kanit;cursor:pointer;box-shadow:0 0 30px #ffcf424d}.showcase-next b{margin-left:18px}
+.ballot-room{padding:20px 0 60px;background:repeating-linear-gradient(90deg,transparent 0 39px,#ad8d1610 40px)}.official-ballot{max-width:830px!important;margin-top:18px!important;border:2px solid #302d22!important;box-shadow:12px 14px #d5bc69!important;padding:35px!important;overflow:hidden}.official-ballot header{display:flex;justify-content:space-between;gap:15px;border:3px double #302d22;padding:17px;margin-bottom:24px}.official-ballot header span{font-size:23px;font-weight:800}.official-ballot header b{font-size:13px}.ballot-watermark{position:absolute;inset:35% 0 auto;text-align:center;font-size:100px;font-weight:800;color:#b7970d0c;transform:rotate(-18deg)}.official-ballot .ballot-option{display:grid;grid-template-columns:62px 65px 1fr;align-items:center;min-height:94px;padding:12px;border:1px solid #5b5542;background:#fffdf7}.ballot-box{position:relative;width:48px;height:48px;border:3px solid #302d22;background:#fff}.ballot-box i{position:absolute;left:4px;top:20px;width:36px;height:5px;background:#173e97;border-radius:4px;opacity:0;transform:rotate(42deg) scaleX(0);transform-origin:left;transition:.25s}.ballot-box .ink-two{transform:rotate(-42deg) scaleX(0)}.ballot-option.selected .ink-one{opacity:1;transform:rotate(42deg) scaleX(1)}.ballot-option.selected .ink-two{opacity:1;transform:rotate(-42deg) scaleX(1);transition-delay:.2s}.ballot-no{font-size:40px;font-weight:800}.ballot-name{text-align:left}.ballot-name small,.ballot-name b{display:block}.ballot-name b{font-size:19px}.animated-pen{position:absolute;left:10px;top:0;font-size:45px;opacity:0}.ballot-option.selected .animated-pen{animation:penCross .55s ease both}.official-ballot .election-action{position:relative;margin-top:28px}
+.thank-spark{font-size:70px;color:#f4bd14;animation:glimmer 1.8s ease-in-out infinite}.countdown-card{margin:30px auto;padding:34px;border-radius:28px;color:#fff5c9;background:radial-gradient(circle at 50% 0,#e6af283d,transparent 45%),#1f1c12;box-shadow:0 24px 70px #6d500531}.countdown-card small,.countdown-card time{display:block;color:#dfc76e;letter-spacing:2px}.countdown-card .countdown{color:#ffd139;text-shadow:0 0 30px #ffce3c66}
+.results-universe{position:relative;margin:10px calc(50% - 50vw) 50px;padding:65px 20px 100px;min-height:950px;text-align:center;color:#fff7d5;overflow:hidden;background:radial-gradient(circle at 50% 50%,#c7851538,transparent 24%),radial-gradient(circle at 20% 20%,#fff3b80d 0 1px,transparent 2px),#080806;background-size:auto,35px 35px}.results-universe:after{content:"";position:absolute;inset:-25%;background:repeating-conic-gradient(#ffd63b08 0 3deg,transparent 3deg 15deg);animation:slowSpin 80s linear infinite}.result-eyebrow,.results-universe h3,.results-universe>p,.star-stage,.result-reveal{position:relative;z-index:1}.result-eyebrow{color:#ffd95b;letter-spacing:5px;font-size:12px}.results-universe h3{font-size:clamp(42px,6vw,75px);line-height:.95;margin:14px}.results-universe h3 em{font-family:"DM Serif Display";color:#ffd23c}.results-universe>p{color:#bdb494}.star-stage{width:min(570px,90vw);aspect-ratio:1;margin:35px auto}.cosmic-ring{position:absolute;inset:4%;border:1px solid #ffe6763d;border-radius:50%;box-shadow:0 0 60px #ffcf3433,inset 0 0 60px #ffcf3426;animation:slowSpin 35s linear infinite}.six-star{position:absolute;inset:9%;filter:drop-shadow(0 0 25px #ffc62a55);animation:starFloat 8s ease-in-out infinite}.six-star:before,.six-star:after{content:"";position:absolute;inset:8%;background:linear-gradient(145deg,#ffe56b2b,#8e600018);clip-path:polygon(50% 0,100% 75%,0 75%)}.six-star:after{transform:rotate(180deg)}.star-point{position:absolute;z-index:2;width:84px;height:84px;border:0;border-radius:50%;background:#19170f;color:#776b45;font:600 13px Kanit}.star-point.available{color:#fff5bd;cursor:pointer;background:radial-gradient(circle,#fffbd0 0 4%,#ffc21f 10%,#9a6106 30%,#16130b 69%);box-shadow:0 0 15px #ffd43c,0 0 50px #ffc52c;animation:pointGlow 2s infinite}.point-1{top:-6%;left:calc(50% - 42px)}.point-2{right:0;top:23%}.point-3{right:0;bottom:23%}.point-4{bottom:-6%;left:calc(50% - 42px)}.point-5{left:0;bottom:23%}.point-6{left:0;top:23%}.star-core{position:absolute;z-index:5;left:50%;top:50%;width:145px;height:145px;transform:translate(-50%,-50%);border:1px solid #ffe470;border-radius:50%;color:#fff4b6;background:radial-gradient(circle,#8b6509,#1b180d 68%);box-shadow:0 0 35px #ffc832,0 0 100px #ffc8324d;cursor:pointer}.star-core span,.star-core b,.star-core small{display:block}.result-reveal{max-width:660px;min-height:85px;margin:auto;padding:22px;border:1px solid #ffdf6d30;border-radius:25px;background:#ffffff0a}.result-reveal h4{font-size:28px;margin:5px 0 20px;color:#ffd139}.score-line{position:relative;display:flex;justify-content:space-between;gap:15px;padding:11px 15px;border-top:1px solid #ffe37222;text-align:left}.score-line.winner{background:#ffd94618;color:#ffe269}.winner-stage{display:flex;align-items:center;justify-content:center;gap:18px;margin:15px}.winner-stage>img,.winner-stage>span{width:90px;height:90px;object-fit:cover;display:grid;place-items:center;border-radius:50%;background:#ddaa20;color:#fff;font-size:40px}.winner-stage b,.winner-stage small{display:block}.winner-stage b{font-size:30px;color:#ffd23c}
+.election-admin{padding:0!important;overflow:hidden}.election-admin-head{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:28px;background:#211e14;color:#fff7d4}.election-admin-head small{letter-spacing:3px;color:#edc64a}.election-admin-head h3{font-size:30px;margin:4px 0}.election-admin-head p{margin:0;color:#c8bea0}.election-switch{display:flex;align-items:center;gap:10px;white-space:nowrap}.election-switch input{display:none}.election-switch span{width:54px;height:30px;border-radius:20px;background:#665f49;position:relative}.election-switch span:after{content:"";position:absolute;width:22px;height:22px;left:4px;top:4px;border-radius:50%;background:#fff;transition:.25s}.election-switch input:checked+span{background:#e2ad18}.election-switch input:checked+span:after{left:28px}.admin-election-stats{display:grid;grid-template-columns:repeat(4,1fr);background:#f5c52d}.admin-election-stats div{padding:18px;text-align:center}.admin-election-stats b,.admin-election-stats span{display:block}.admin-election-stats b{font-size:28px}.admin-config-section{display:grid;grid-template-columns:70px 1fr;border-bottom:1px solid #e8dcae}.config-index{padding:30px 18px;font-size:22px;font-weight:800;color:#c1910c;background:#fff9df}.config-body{padding:28px}.config-body h4{font-size:23px;margin:0}.config-body>p{color:#746b4f}.eligibility-groups{display:grid;grid-template-columns:1fr 1fr;gap:20px}.check-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.check-grid label{padding:8px 11px;border:1px solid #e1cf86;border-radius:10px;background:#fffdf4}.student-permission{margin-top:20px;border:1px solid #eadcae;border-radius:14px;padding:12px}.student-permission-list{max-height:320px;overflow:auto;margin-top:12px}.student-permission-list>label{display:grid;grid-template-columns:1fr 210px;align-items:center;gap:10px;padding:8px;border-top:1px solid #eee5c6}.student-permission-list select,.candidate-editor-fields textarea{width:100%;border:1px solid #dfcb82;border-radius:10px;background:#fffefa;padding:9px;font:inherit}.candidate-editor-row{display:grid;grid-template-columns:95px 1fr 35px;gap:15px;align-items:start;padding:18px;margin:15px 0;border:1px solid #e7d9a9;border-radius:16px;background:#fffdf5}.candidate-editor-photo{height:110px;border:1px dashed #c5a633;border-radius:14px;overflow:hidden;display:grid;place-items:center;cursor:pointer;color:#9a7510}.candidate-editor-photo img{width:100%;height:100%;object-fit:cover}.candidate-editor-photo input{display:none}.candidate-editor-fields .field{margin:6px 0}.candidate-remove{border:0;background:#fae5dc;color:#a43e1e;border-radius:50%;width:30px;height:30px;font-size:20px}.result-time-preview{padding:14px;border-radius:12px;background:#fff1b7}.election-admin-save{position:sticky;bottom:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 28px;background:#211e14;color:#fff5ca}.election-admin-save b,.election-admin-save span{display:block}.election-admin-save span{font-size:13px;color:#c8bea0}.election-admin-save span.error{color:#ff9b7a}
+@keyframes slowSpin{to{transform:rotate(360deg)}}@keyframes glimmer{50%{opacity:.35;text-shadow:0 0 35px #ffd83c}}@keyframes candidateRise{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:none}}@keyframes penCross{0%{opacity:0;transform:translate(0,-35px) rotate(-35deg)}20%{opacity:1}60%{transform:translate(22px,15px) rotate(-25deg)}100%{opacity:0;transform:translate(5px,52px) rotate(-15deg)}}@keyframes starFloat{50%{transform:rotate(.7deg) scale(1.015)}}@keyframes pointGlow{50%{box-shadow:0 0 25px #fff6b2,0 0 75px #ffc52c}}
+@media(max-width:760px){.election-register{grid-template-columns:1fr}.register-visual{min-height:410px;padding:35px}.register-orbit{width:170px;margin:22px auto}.register-visual h3{font-size:35px}.election-login{padding:35px 24px}.official-ballot{padding:18px!important}.official-ballot header{display:block}.official-ballot .ballot-option{grid-template-columns:50px 45px 1fr}.ballot-no{font-size:30px}.star-stage{width:95vw;margin-left:calc(50% - 47.5vw)}.star-point{width:67px;height:67px;font-size:11px}.point-1,.point-4{left:calc(50% - 33px)}.star-core{width:115px;height:115px}.admin-election-stats{grid-template-columns:1fr 1fr}.election-admin-head,.election-admin-save{align-items:flex-start;flex-direction:column}.admin-config-section{grid-template-columns:1fr}.config-index{padding:10px 20px}.eligibility-groups{grid-template-columns:1fr}.student-permission-list>label{grid-template-columns:1fr}.candidate-editor-row{grid-template-columns:70px 1fr 30px}.candidate-editor-photo{height:85px}}
+
+/* Celestial oracle results — art direction from the supplied astrology reference */
+.results-universe{isolation:isolate;min-height:1200px;padding-top:42px;background-color:#030b1c;background-image:linear-gradient(#02081766,#02081788);background-position:center top;background-size:cover;background-attachment:fixed;border-top:1px solid #d3a548;box-shadow:inset 0 0 150px #000}.results-universe:before{content:"";position:absolute;z-index:0;inset:13px;border:1px solid #bd873e;box-shadow:inset 0 0 0 4px #061027,inset 0 0 0 5px #7a5428;pointer-events:none}.results-universe:after{z-index:0;inset:-35%;background:repeating-conic-gradient(from 8deg,#d5a04b08 0 1deg,transparent 1deg 15deg);animation:slowSpin 150s linear infinite}.occult-corners{position:absolute;z-index:1;inset:24px;pointer-events:none}.occult-corners i{position:absolute;width:92px;height:92px;border-color:#c99648;border-style:double}.occult-corners i:after{content:"✦";position:absolute;color:#e4b75e;font-size:22px;text-shadow:0 0 14px #ffc954}.occult-corners i:nth-child(1){left:0;top:0;border-width:4px 0 0 4px;border-radius:24px 0}.occult-corners i:nth-child(1):after{left:8px;top:6px}.occult-corners i:nth-child(2){right:0;top:0;border-width:4px 4px 0 0;border-radius:0 24px}.occult-corners i:nth-child(2):after{right:8px;top:6px}.occult-corners i:nth-child(3){left:0;bottom:0;border-width:0 0 4px 4px;border-radius:0 24px}.occult-corners i:nth-child(3):after{left:8px;bottom:6px}.occult-corners i:nth-child(4){right:0;bottom:0;border-width:0 4px 4px 0;border-radius:24px 0}.occult-corners i:nth-child(4):after{right:8px;bottom:6px}.oracle-heading{position:relative;z-index:2;max-width:720px;margin:auto;padding:18px 20px;text-shadow:0 3px 18px #000}.oracle-heading:before,.oracle-heading:after{content:"";position:absolute;top:50%;width:90px;height:1px;background:linear-gradient(90deg,transparent,#d6a74e)}.oracle-heading:before{left:-75px}.oracle-heading:after{right:-75px;transform:scaleX(-1)}.oracle-moon{display:grid;width:52px;height:52px;margin:0 auto 12px;place-items:center;border:1px solid #d4a450;border-radius:50%;font-size:31px;color:#e3b457;background:#071125;box-shadow:0 0 25px #b87c2a66}.results-universe .result-eyebrow{font-family:Georgia,serif;color:#ddaf58;letter-spacing:4px}.results-universe h3{font-family:Georgia,"DM Serif Display",serif;font-weight:400;letter-spacing:1px;color:#f1d68d}.results-universe h3 em{color:#e9b954;text-shadow:0 0 22px #d88937}.results-universe>p,.oracle-heading p{color:#d6c28e}.zodiac-arch{position:relative;z-index:2;display:flex;justify-content:center;gap:clamp(8px,2vw,25px);max-width:900px;margin:25px auto -40px;padding:12px 20px;border-top:1px solid #b9813980;border-radius:50%;color:#d5a551;font:24px Georgia;opacity:.8}.zodiac-arch span:nth-child(odd){transform:translateY(-8px)}
+.results-universe .star-stage{width:min(720px,90vw);margin-top:55px}.results-universe .cosmic-ring{inset:1%;border:2px solid #ba833b;background:repeating-conic-gradient(from 0deg,transparent 0 14deg,#cc984c55 14.2deg 14.5deg);box-shadow:0 0 0 10px #071026b8,0 0 0 11px #8e642f,0 0 65px #b5723980,inset 0 0 80px #68432688;animation:slowSpin 90s linear infinite}.results-universe .cosmic-ring:after{content:"✦ ✧ · ✦ · ✧ ✦";position:absolute;inset:9%;display:grid;place-items:center;border:1px dashed #bc863e;border-radius:50%;color:#d5a74b;font-size:24px;letter-spacing:30px}.results-universe .six-star{inset:11%;filter:drop-shadow(0 0 7px #ffcd6b) drop-shadow(0 0 28px #532174);animation:oracleDrift 14s ease-in-out infinite}.results-universe .six-star:before,.results-universe .six-star:after{inset:5%;background:linear-gradient(135deg,#e6bd6770,#6e451022);clip-path:polygon(50% 0,100% 75%,0 75%);filter:drop-shadow(0 0 1px #fff0a5)}.results-universe .six-star:before{outline:2px solid #d9aa50}.results-universe .star-point{width:96px;height:96px;color:#937740;border:1px solid #745725;background:radial-gradient(circle,#251938 0 18%,#7c5b2b 19% 21%,#071026 23% 59%,#ba863e 61% 63%,#071026 65%);box-shadow:0 0 0 3px #081127,0 0 0 4px #9d7138}.results-universe .star-point i{position:absolute;inset:25%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#a66df0 13%,#31165c 48%,#050610 70%);box-shadow:0 0 14px #bb78ff}.results-universe .star-point span{position:absolute;z-index:2;top:105%;left:50%;width:135px;transform:translateX(-50%);color:#a89870}.results-universe .star-point.available{color:#fff4c4;box-shadow:0 0 0 3px #081127,0 0 0 5px #d6a34e,0 0 28px #b875ed,0 0 60px #d99a35;animation:gemPulse 2.8s ease-in-out infinite}.results-universe .star-point.available span{color:#f0d28d;text-shadow:0 2px 8px #000}.results-universe .point-1{top:-7%;left:calc(50% - 48px)}.results-universe .point-4{bottom:-7%;left:calc(50% - 48px)}.results-universe .star-core{width:178px;height:178px;border:2px solid #e1b151;font-family:Georgia,serif;background:radial-gradient(circle,#fff9c9 0 3%,#f2c55b 4% 7%,#b26bd8 8% 16%,#3c1858 19% 28%,#071027 31% 54%,#a67534 56% 58%,#071027 60%);box-shadow:0 0 0 7px #061027,0 0 0 8px #b27d38,0 0 38px #c379ff,0 0 100px #e8a63a}.results-universe .star-core span{font-size:43px;color:#fff5b0;text-shadow:0 0 12px white}.results-universe .star-core b{color:#f3d285}.moon-orbit{position:absolute;z-index:3;width:74px;height:74px;display:grid;place-items:center;border:1px solid #c28d40;border-radius:50%;color:#e0b257;background:#061028cc;font:38px Georgia;box-shadow:0 0 25px #b17435}.moon-top{top:2%;left:-5%}.moon-bottom{right:-5%;bottom:2%}.constellation{position:absolute;z-index:1;color:#dfb45c;letter-spacing:9px;text-shadow:0 0 8px white;opacity:.7}.constellation-a{top:16%;left:6%;transform:rotate(-18deg)}.constellation-b{top:21%;right:8%;transform:rotate(22deg)}.oracle-instruction{position:relative;z-index:2;margin:15px auto 25px;color:#c9b17b;font:15px Georgia}.oracle-instruction span{padding:0 15px;color:#e5b451;font-size:23px}.oracle-instruction i{display:inline-block;width:45px;height:1px;margin:0 10px;vertical-align:middle;background:#a97938}
+.results-universe .result-reveal{max-width:700px;min-height:250px;padding:28px 45px;border:1px solid #c58e40;border-radius:8px;color:#ead9a9;background:linear-gradient(145deg,#071128f2,#030817f2);box-shadow:0 0 0 6px #061026,0 0 0 7px #6f4d27,0 24px 70px #000,inset 0 0 60px #3b1b5866}.results-universe .result-reveal:before,.results-universe .result-reveal:after{content:"✦";position:absolute;top:10px;color:#d8a84f}.results-universe .result-reveal:before{left:14px}.results-universe .result-reveal:after{right:14px}.tarot-back{min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid #8f6631;background:repeating-radial-gradient(circle at center,transparent 0 18px,#bd854321 19px 20px)}.tarot-back span{font-size:50px;color:#e0ad4d;text-shadow:0 0 18px #f2be5a}.tarot-back b{font:22px Georgia;letter-spacing:5px;color:#e7c778}.tarot-back small{margin-top:10px;color:#9f916e}.results-universe .result-reveal h4{font-family:Georgia,serif;font-weight:400;color:#f0c96e}.results-universe .score-line{border-color:#b57e3c55}.results-universe .score-line.winner{background:#946a2d33;color:#f3d37f}
+@keyframes oracleDrift{50%{transform:rotate(.45deg) scale(1.012)}}@keyframes gemPulse{50%{filter:brightness(1.25);box-shadow:0 0 0 3px #081127,0 0 0 5px #f2cf7d,0 0 42px #d59cff,0 0 85px #e8ad4a}}
+@media(max-width:760px){.results-universe{min-height:980px;background-attachment:scroll}.results-universe:before{inset:7px}.occult-corners{inset:12px}.occult-corners i{width:55px;height:55px}.oracle-heading{padding:15px 30px}.oracle-heading:before,.oracle-heading:after{display:none}.zodiac-arch{font-size:17px;gap:8px;margin-bottom:-20px}.results-universe .star-stage{width:96vw;margin-left:calc(50% - 48vw)}.results-universe .star-point{width:70px;height:70px}.results-universe .point-1,.results-universe .point-4{left:calc(50% - 35px)}.results-universe .star-point span{width:90px;font-size:10px}.results-universe .star-core{width:125px;height:125px}.results-universe .result-reveal{margin:0 14px;padding:20px}.moon-orbit{width:50px;height:50px;font-size:25px}.oracle-instruction{padding:0 30px}}
+
+/* Original lightweight celestial artwork — no bitmap background */
+.results-universe{
+  background-color:#030a19;
+  background-image:
+    radial-gradient(circle at 50% 43%,#48275c55 0 7%,transparent 27%),
+    radial-gradient(circle at 18% 22%,#ddb257 0 1px,transparent 2px),
+    radial-gradient(circle at 72% 14%,#fff1b5 0 1px,transparent 2px),
+    radial-gradient(circle at 82% 68%,#ae7ddd 0 1px,transparent 2px),
+    radial-gradient(circle at 28% 78%,#fff 0 1px,transparent 2px),
+    linear-gradient(145deg,#020713,#07142b 52%,#030817);
+  background-size:auto,97px 97px,137px 137px,163px 163px,211px 211px,auto;
+  background-attachment:scroll;
+  box-shadow:inset 0 0 110px #000;
+}
+.results-universe:before{
+  background:
+    linear-gradient(90deg,#c59543 0 20%,transparent 20% 80%,#c59543 80%) top/100% 1px no-repeat,
+    linear-gradient(90deg,#c59543 0 20%,transparent 20% 80%,#c59543 80%) bottom/100% 1px no-repeat,
+    linear-gradient(#c59543 0 20%,transparent 20% 80%,#c59543 80%) left/1px 100% no-repeat,
+    linear-gradient(#c59543 0 20%,transparent 20% 80%,#c59543 80%) right/1px 100% no-repeat;
+  border:0;
+  box-shadow:inset 0 0 0 1px #5d4224;
+}
+.results-universe:after{display:none}
+.results-universe .cosmic-ring{
+  background:
+    repeating-conic-gradient(from 0deg,transparent 0 29deg,#c5964e 29.2deg 29.6deg),
+    radial-gradient(circle,transparent 0 56%,#b9853f 56.2% 56.5%,transparent 56.8% 69%,#89622f 69.2% 69.5%,transparent 69.8%);
+  box-shadow:0 0 0 1px #4d351e,0 0 35px #a469354d,inset 0 0 45px #39214470;
+  animation:none;
+}
+.results-universe .cosmic-ring:before{
+  content:"";
+  position:absolute;
+  inset:15%;
+  border:1px solid #9b7038;
+  border-radius:50%;
+  background:repeating-conic-gradient(transparent 0 14deg,#a77837 14.2deg 14.5deg);
+}
+.results-universe .cosmic-ring:after{
+  content:"✦  ·  ✧  ·  ✦  ·  ✧";
+  inset:24%;
+  border:1px dashed #8e6735;
+  letter-spacing:12px;
+  font-size:17px;
+  background:#050d1eb8;
+}
+.results-universe .six-star{
+  filter:none;
+  animation:oracleDrift 18s ease-in-out infinite;
+  will-change:transform;
+}
+.results-universe .six-star:before,.results-universe .six-star:after{
+  background:linear-gradient(135deg,#efd17b 0 2%,#664219 2.5% 4%,#d6a84d 4.5% 6%,transparent 6.5% 93.5%,#d6a84d 94% 96%,#664219 96.5% 98%,#efd17b 98.5%);
+  filter:none;
+}
+.results-universe .star-point{
+  box-shadow:0 0 0 3px #061026,0 0 0 4px #a97839;
+}
+.results-universe .star-point.available{
+  box-shadow:0 0 0 3px #061026,0 0 0 5px #d6a34e,0 0 24px #a56bd0;
+  animation:gemPulseLite 2.8s ease-in-out infinite;
+  will-change:transform,opacity;
+}
+.results-universe .star-point i{box-shadow:0 0 10px #a96fe0}
+.results-universe .star-core{
+  box-shadow:0 0 0 6px #061027,0 0 0 7px #b27d38,0 0 30px #905ab8;
+  transition:transform .25s ease,box-shadow .25s ease;
+}
+.results-universe .star-core:hover{transform:translate(-50%,-50%) scale(1.04);box-shadow:0 0 0 6px #061027,0 0 0 8px #e0b65e,0 0 42px #b77ae0}
+.results-universe .result-reveal{backdrop-filter:none;box-shadow:0 0 0 5px #061026,0 0 0 6px #6f4d27,0 20px 45px #0009}
+.constellation{text-shadow:0 0 5px #e6c16a}
+@keyframes gemPulseLite{50%{transform:scale(1.045);opacity:.9}}
+@media(prefers-reduced-motion:reduce){.results-universe *{animation:none!important;scroll-behavior:auto!important}}
+@media(max-width:760px){
+  .results-universe{background-size:auto,73px 73px,101px 101px,127px 127px,157px 157px,auto;box-shadow:inset 0 0 55px #000}
+  .results-universe .six-star{animation:none}
+  .constellation{display:none}
+}
+
+/* Election results dashboard */
+.results-dashboard{min-height:850px;padding:28px clamp(18px,4vw,60px) 65px;text-align:left}.results-header{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:25px;max-width:1400px;margin:auto;padding:22px 0;border-bottom:1px solid #b9894055}.results-header small{color:#c89b50;letter-spacing:3px}.results-header h3{margin:5px 0;font-size:clamp(32px,4vw,56px);line-height:1}.results-header p{margin:0;color:#9f9272}.result-status{display:grid;grid-template-columns:10px auto;align-items:center;gap:2px 9px;padding:12px 18px;border:1px solid #846333;border-radius:10px;background:#061025}.result-status i{grid-row:1/3;width:8px;height:8px;border-radius:50%;background:#72d29a;box-shadow:0 0 12px #72d29a}.result-status span{font-size:11px;color:#a79775}.result-status b{color:#f0d285}.result-tabs{position:relative;z-index:2;display:flex;justify-content:center;max-width:1400px;margin:20px auto}.result-tabs button{padding:11px 25px;border:1px solid #91703b;background:#061025;color:#b7a47d;font:600 15px Kanit;cursor:pointer}.result-tabs button:first-child{border-radius:25px 0 0 25px}.result-tabs button:last-child{border-radius:0 25px 25px 0}.result-tabs button.active{color:#171106;background:#deb35c;box-shadow:0 0 20px #b07a3544}.result-panel{position:relative;z-index:2;max-width:1400px;margin:auto}.overview-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,.75fr);gap:22px}.prophecy-stage,.room-summary,.room-selector,.room-map-host{position:relative;border:1px solid #7b5b31;border-radius:16px;background:linear-gradient(145deg,#0b1429f2,#050b19f2);overflow:hidden}.prophecy-stage{min-height:650px;padding:26px}.celestial-rays{position:absolute;inset:-25%;opacity:.22;background:repeating-conic-gradient(from 0deg,#d2a253 0 .5deg,transparent .8deg 15deg);animation:slowSpin 160s linear infinite;will-change:transform}.prophecy-title{position:relative;text-align:center}.prophecy-title>span{font-size:28px;color:#d6a958}.prophecy-title small{display:block;letter-spacing:4px;color:#9b7a45}.prophecy-title h4{margin:3px;font:32px Georgia;color:#edd086}.result-card-deck{position:relative;display:flex;align-items:center;justify-content:center;min-height:430px;padding:30px 5px}.prophecy-card{position:relative;width:clamp(180px,24vw,270px);height:390px;margin:0 -24px;perspective:1100px;transform:translateY(var(--rank-shift)) rotate(var(--rank-angle));transition:transform .35s}.prophecy-card:hover{z-index:30;transform:translateY(-12px) rotate(0)}.prophecy-card-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .85s cubic-bezier(.2,.75,.25,1);transition-delay:var(--rank-delay)}.prophecy-card.revealed .prophecy-card-inner{transform:rotateY(180deg)}.card-back,.card-front{position:absolute;inset:0;backface-visibility:hidden;border:2px solid #bf9149;border-radius:14px;overflow:hidden;box-shadow:0 18px 35px #0009}.card-back{display:flex;flex-direction:column;align-items:center;justify-content:center;background:repeating-radial-gradient(circle,#071027 0 25px,#9c71382b 26px 27px),#050b18;box-shadow:inset 0 0 0 8px #071027,inset 0 0 0 9px #8d6634,0 18px 35px #0009}.card-back:before,.card-back:after{content:"☾ ✦ ☽";position:absolute;color:#b98a43;letter-spacing:9px}.card-back:before{top:20px}.card-back:after{bottom:20px;transform:rotate(180deg)}.tarot-sigil{width:110px;height:110px;display:grid;place-items:center;border:1px solid #bd8e47;border-radius:50%;color:#e1b45e;font-size:48px;background:radial-gradient(circle,#6d3c794d,transparent 65%)}.card-back span{margin-top:20px;color:#e2c274;font:18px Georgia;letter-spacing:3px}.card-back small{color:#806c48}.card-front{transform:rotateY(180deg);display:flex;flex-direction:column;background:#f7edd2;color:#18130c}.card-front:before{content:"";position:absolute;inset:7px;border:1px solid var(--candidate-color);pointer-events:none}.card-rank{position:relative;padding:10px;text-align:center;background:var(--candidate-color);color:white;font:12px Georgia;letter-spacing:2px}.card-portrait{position:relative;height:235px;margin:9px 14px 0;overflow:hidden;background:linear-gradient(145deg,var(--candidate-color),#14101c)}.card-portrait img{width:100%;height:100%;object-fit:cover}.card-initial{height:100%;display:grid;place-items:center;color:#fff;font-size:95px;font-weight:800}.card-portrait b{position:absolute;left:10px;bottom:9px;padding:5px 9px;border-radius:20px;color:#fff;background:#080b15cc}.card-result{position:relative;text-align:center;padding:10px}.card-result h5{margin:0;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.card-result strong{font:700 47px Georgia;color:var(--candidate-color)}.card-result span{margin-left:5px;color:#645736}.prophecy-card.first-place{width:clamp(205px,27vw,300px);height:425px;z-index:25}.prophecy-card.first-place .card-front{box-shadow:0 0 0 3px #081127,0 0 0 5px #e1b75f,0 15px 42px #c5903b66}.winner-prophecy{position:relative;text-align:center}.winner-prophecy span,.winner-prophecy small{display:block;color:#a9966b}.winner-prophecy b{font-size:22px;color:#f0cf79}
+.room-summary{min-height:650px;padding:20px}.room-summary>header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #72552e;padding-bottom:13px}.room-summary h4{margin:3px 0;color:#ead083;font-size:22px}.room-summary header small{color:#987b4d;letter-spacing:2px}.room-summary header>span{font-size:35px;color:#d0a34f}.summary-table{margin-top:12px;border:1px solid #654a29;border-radius:10px;overflow:auto}.summary-row{display:grid;grid-template-columns:minmax(65px,1.2fr) repeat(var(--candidate-count,3),minmax(52px,.7fr)) minmax(65px,.8fr);width:100%;min-width:max-content;border:0;border-bottom:1px solid #5f472a;background:#0a1327;color:#d9c89e;text-align:center;font:14px Kanit}.summary-row>*{padding:12px 9px}.summary-row span{border-left:1px solid #4e3b25;border-top:3px solid var(--candidate-color)}button.summary-row{cursor:pointer}.summary-row:not(.summary-head):hover{background:#14213c}.summary-head{background:#030713;color:#9d875c}.candidate-legend{margin-top:17px}.candidate-legend>div{display:grid;grid-template-columns:13px 1fr auto;align-items:center;gap:9px;margin:12px 0;color:#bfad84}.candidate-legend i{width:10px;height:10px;border-radius:50%;background:var(--candidate-color);box-shadow:0 0 8px var(--candidate-color)}.candidate-legend progress{grid-column:2/4;width:100%;height:5px;border:0}.candidate-legend progress::-webkit-progress-bar{background:#19243a}.candidate-legend progress::-webkit-progress-value{background:linear-gradient(90deg,#765227,#d3a752)}
+.room-dashboard{display:grid;grid-template-columns:290px 1fr;gap:22px}.room-selector{padding:20px}.room-selector>small{color:#9c7b47;letter-spacing:2px}.room-selector>h4{margin:5px 0 18px;color:#eed38a}.room-selector button{display:grid;grid-template-columns:42px 1fr 20px;align-items:center;width:100%;margin:8px 0;padding:12px;border:1px solid #594326;border-radius:10px;background:#091226;color:#b9aa87;text-align:left;font:14px Kanit;cursor:pointer}.room-selector button span{font:26px Georgia;color:#b68b47}.room-selector button i{text-align:right}.room-selector button.active{border-color:#d2a34e;color:#f2d88f;background:#17213a;box-shadow:inset 3px 0 #d2a34e}.room-map-host{min-height:650px;padding:22px}.room-map-head{display:flex;justify-content:space-between;align-items:center}.room-map-head small{color:#9b7b48;letter-spacing:2px}.room-map-head h4{margin:4px 0;color:#ebcf83;font-size:25px}.room-map-head>b{font:44px Georgia;color:#e4b95f}.room-map-head>b span{display:block;font:11px Kanit;color:#95866a}.parliament-map{position:relative;height:410px;margin:10px auto 20px;overflow:hidden;border-bottom:1px solid #836234;background:radial-gradient(ellipse at 50% 100%,#5b376242,transparent 55%)}.map-stars{position:absolute;top:20px;left:0;right:0;text-align:center;color:#b8914b;letter-spacing:28px}.seat-orbits{position:absolute;left:50%;bottom:48px;width:1px;height:1px}.parliament-seat{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border:1px solid #a88d63;border-radius:4px 4px 50% 50%;background:var(--seat-color);box-shadow:0 0 6px var(--seat-color);transform:rotate(var(--seat-angle)) translateY(calc(-1 * var(--seat-radius))) rotate(calc(-1 * var(--seat-angle)));animation:seatAppear .35s both}.parliament-seat:not(.voted){opacity:.3;box-shadow:none}.speaker-oracle{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:95px;padding:8px;text-align:center;border:1px solid #c49544;border-radius:50% 50% 8px 8px;color:#e6c36f;background:#0b1428}.speaker-oracle span,.speaker-oracle b{display:block}.speaker-oracle span{font-size:25px}.speaker-oracle b{font-size:11px}.room-candidate-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:9px}.room-candidate-summary>div{display:grid;grid-template-columns:12px 1fr auto;align-items:center;gap:9px;padding:11px;border:1px solid #5f472a;border-radius:9px;background:#081125;color:#d7c79e}.room-candidate-summary i{width:10px;height:30px;border-radius:8px;background:var(--candidate-color);box-shadow:0 0 8px var(--candidate-color)}.room-candidate-summary span small,.room-candidate-summary b small{display:block;font-size:10px;color:#897e64}.room-candidate-summary b{font-size:22px;color:var(--candidate-color)}.room-candidate-summary .not-voted i{background:#34405a;box-shadow:none}.candidate-editor-main{display:grid;grid-template-columns:100px 1fr 150px;gap:10px}.candidate-color-field>div{display:flex;align-items:center;gap:7px}.candidate-color-field input{width:48px!important;height:45px;padding:3px!important}.candidate-color-field span{font-size:11px;color:#766a4c}
+@keyframes seatAppear{from{opacity:0;transform:rotate(var(--seat-angle)) translateY(0) scale(.2)}}
+@media(max-width:980px){.overview-layout{grid-template-columns:1fr}.room-summary{min-height:auto}.room-dashboard{grid-template-columns:1fr}.room-selector{display:flex;align-items:center;gap:8px;overflow:auto}.room-selector>small,.room-selector>h4{display:none}.room-selector button{min-width:190px}.candidate-editor-main{grid-template-columns:90px 1fr}}
+@media(max-width:650px){.results-dashboard{padding-left:10px;padding-right:10px}.results-header{align-items:flex-start}.result-status{display:none}.result-card-deck{justify-content:flex-start;overflow-x:auto;min-height:400px;padding-left:25px}.prophecy-card,.prophecy-card.first-place{flex:0 0 210px;width:210px;height:350px;margin-right:-30px}.prophecy-card.first-place{height:380px}.card-portrait{height:205px}.summary-row{font-size:12px}.room-map-host{padding:13px}.parliament-map{height:330px;transform:scale(.88);transform-origin:center bottom;margin:-15px -20px 5px}.candidate-editor-main{grid-template-columns:1fr}.results-header h3{font-size:34px}.celestial-rays{display:none}}
+
+/* Shared visual language across the complete election flow */
+#election>.title{position:relative;margin:0 calc(50% - 50vw);padding:48px max(24px,calc((100vw - 1132px)/2)) 30px;color:#f2d990;background:radial-gradient(circle at 72% 20%,#6e3c7650,transparent 25%),radial-gradient(circle at 15% 45%,#e5b963 0 1px,transparent 2px),linear-gradient(145deg,#030916,#0a1730);background-size:auto,80px 80px,auto;border-bottom:1px solid #9c7138}#election>.title:after{content:"☾  ✦  ♈  ·  ♊  ✧  ♌  ·  ♎  ✦  ♐  ☽";position:absolute;right:max(24px,calc((100vw - 1132px)/2));top:35px;color:#a98243;letter-spacing:10px;font:18px Georgia;opacity:.6}#election>.title .section-label{color:#c99c50}#election>.title h2{font-family:Georgia,"DM Serif Display",serif;font-weight:400}#election>.title p{color:#a99b78}.election-register,.candidate-showcase,.ballot-room,.result-wait{margin-top:28px}.election-admin{background:radial-gradient(circle at 85% 8%,#6c3a7540,transparent 20%),#fffdf5}.admin-config-section{position:relative}.admin-config-section:after{content:"✦";position:absolute;right:18px;top:14px;color:#c79a48;opacity:.35}
+@media(max-width:760px){#election>.title:after{display:none}#election>.title{padding-top:34px}}
+
+/* Safe election-cycle reset */
+.reset-election-section{background:linear-gradient(90deg,#fff8e8,#fffdf5)}.reset-election-box{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px;border:1px solid #d9ad68;border-radius:16px;background:#2a1517;color:#f6dfb2}.reset-oracle{display:flex;align-items:center;gap:14px}.reset-oracle>span{width:48px;height:48px;display:grid;place-items:center;border:1px solid #d6a356;border-radius:50%;font-size:27px;color:#f0c36b;background:#100d17}.reset-oracle b,.reset-oracle small{display:block}.reset-oracle small{color:#bda584}.reset-election-box>button,.confirm-election-reset{border:1px solid #e1ad61;border-radius:10px;padding:11px 16px;background:#a73531;color:#fff3d0;font:600 14px Kanit;cursor:pointer}.election-reset-dialog{width:min(500px,calc(100% - 30px));padding:30px;border:1px solid #d0a256;border-radius:20px;color:#eee0b7;background:radial-gradient(circle at 50% 0,#61375666,transparent 35%),#071026;box-shadow:0 25px 90px #000}.election-reset-dialog::backdrop{background:#02050bd9}.reset-dialog-sigil{width:70px;height:70px;margin:auto;display:grid;place-items:center;border:1px solid #d7a756;border-radius:50%;font-size:38px;color:#e7bb67;box-shadow:0 0 25px #b3764655}.election-reset-dialog>small{display:block;margin-top:15px;text-align:center;letter-spacing:3px;color:#bd9250}.election-reset-dialog h3{text-align:center;font-size:27px;margin:5px}.election-reset-dialog p{text-align:center;color:#bdaf8b}.election-reset-dialog label{display:block;margin:20px 0;color:#dbc991}.election-reset-dialog input{display:block;width:100%;margin-top:7px;padding:12px;border:1px solid #806039;border-radius:10px;color:#f3dfab;background:#030917;font:inherit}.election-reset-dialog>div:last-child{display:flex;justify-content:flex-end;gap:9px}.confirm-election-reset:disabled{opacity:.35;cursor:not-allowed}
+
+/* Grand but GPU-friendly result reveal */
+.results-dashboard{animation:dashboardReveal .7s ease both}.results-header:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,#f2c76e,transparent);transform:scaleX(0);animation:goldLine 1.2s .25s ease forwards}.result-tabs{animation:riseReveal .55s .2s both}.result-panel{animation:riseReveal .6s .35s both}.prophecy-stage:after{content:"✦";position:absolute;left:50%;top:48%;font-size:250px;color:#e8bd6008;transform:translate(-50%,-50%);pointer-events:none}.prophecy-card.first-place.revealed{animation:winnerAscend .8s .25s both}.prophecy-card.first-place.revealed:after{content:"";position:absolute;z-index:-1;inset:-25px;background:radial-gradient(ellipse,#e8b95830,transparent 67%);animation:winnerAura 2.4s ease-in-out infinite}.card-front:after{content:"✦";position:absolute;right:12px;top:43px;color:#fff0a3;text-shadow:0 0 10px white;opacity:0}.prophecy-card.revealed .card-front:after{animation:cardSpark 1s calc(var(--rank-delay) + .45s) ease both}.summary-row:not(.summary-head){transition:background .2s,transform .2s}.summary-row:not(.summary-head):hover{transform:translateX(3px)}.room-selector button,.room-candidate-summary>div{transition:transform .2s,border-color .2s,background .2s}.room-selector button:hover{transform:translateX(4px);border-color:#d2a34e}.parliament-map:after{content:"";position:absolute;left:50%;bottom:-200px;width:430px;height:430px;transform:translateX(-50%);border:1px solid #8c6637;border-radius:50%;box-shadow:0 0 0 45px #7e5b2714,0 0 0 90px #7e5b2710;pointer-events:none}.parliament-seat.voted{transition:transform .2s,filter .2s}.parliament-seat.voted:hover{filter:brightness(1.55);z-index:5}.result-status i{animation:statusPulse 2s ease-in-out infinite}
+@keyframes dashboardReveal{from{opacity:0;background-color:#000}to{opacity:1}}@keyframes riseReveal{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}@keyframes goldLine{to{transform:scaleX(1)}}@keyframes winnerAscend{from{transform:translateY(20px) scale(.96)}to{transform:translateY(0) scale(1)}}@keyframes winnerAura{50%{opacity:.5;transform:scale(1.08)}}@keyframes cardSpark{0%{opacity:0;transform:scale(.2) rotate(0)}45%{opacity:1}100%{opacity:0;transform:scale(2.5) rotate(90deg)}}@keyframes statusPulse{50%{opacity:.45;box-shadow:0 0 22px #72d29a}}
+@media(max-width:650px){.reset-election-box{align-items:stretch;flex-direction:column}.reset-election-box>button{width:100%}.prophecy-card.first-place.revealed:after{display:none}}
+@media(prefers-reduced-motion:reduce){.results-dashboard,.results-header:after,.result-tabs,.result-panel,.prophecy-card.first-place.revealed,.prophecy-card.first-place.revealed:after,.card-front:after,.result-status i{animation:none!important}}
+
+/* Keep the ballot cross centered inside its box */
+.official-ballot .ballot-box{overflow:hidden}
+.official-ballot .ballot-box i{left:6px;top:19px;width:31px;height:4px;transform:rotate(43deg) scaleX(0);transform-origin:center;transition:transform .22s ease,opacity .12s}
+.official-ballot .ballot-box .ink-two{transform:rotate(-43deg) scaleX(0)}
+.official-ballot .ballot-option.selected .ink-one{transform:rotate(43deg) scaleX(1)}
+.official-ballot .ballot-option.selected .ink-two{transform:rotate(-43deg) scaleX(1);transition-delay:.16s}
+
+/* Full-site celestial mode while the election page is active */
+body.election-mode{color:#ead8a9;background:#030916;transition:background .35s,color .35s}
+body.election-mode:before{z-index:-2;background:
+  radial-gradient(circle at 14% 18%,#e7be72 0 1px,transparent 2px),
+  radial-gradient(circle at 81% 12%,#b989db 0 1px,transparent 2px),
+  radial-gradient(circle at 70% 72%,#fff0b0 0 1px,transparent 2px),
+  radial-gradient(circle at 50% 45%,#4d295c66,transparent 32%),
+  linear-gradient(145deg,#020713,#08172e 53%,#030817);
+  background-size:89px 89px,137px 137px,181px 181px,auto,auto}
+body.election-mode .school{display:none}
+body.election-mode .nav{color:#ead39a;background:#040b19e8;border-bottom-color:#a77b3d;box-shadow:0 8px 30px #0006}
+body.election-mode .brand{color:#f0d285}
+body.election-mode .seal{color:#e9bd63;border-color:#b88843;background:#111a30;box-shadow:0 0 14px #7b4f8c66}
+body.election-mode .nav button:not(.brand){color:#c7b488}
+body.election-mode .nav button:hover{color:#ffe7a3;background:#6f4d7b44}
+body.election-mode main{max-width:none;padding-left:0;padding-right:0;padding-bottom:0}
+body.election-mode #election{min-height:calc(100vh - 76px);overflow:hidden}
+body.election-mode #electionContent{max-width:1180px;margin:auto;padding:0 24px 64px}
+body.election-mode #electionContent:has(.candidate-showcase),body.election-mode #electionContent:has(.results-dashboard){max-width:none;padding-left:0;padding-right:0}
+body.election-mode .site-credit{padding:18px;color:#8f805f;background:#020611;border-top:1px solid #513c26}
+
+body.election-mode .election-register{border:1px solid #8b6535;box-shadow:0 35px 90px #0008,0 0 45px #643a7250}
+body.election-mode .election-login{color:#e8d6a8;background:
+  radial-gradient(circle at 90% 5%,#6b3b7444,transparent 28%),
+  repeating-radial-gradient(circle at 100% 0,transparent 0 38px,#b5883e12 39px 40px),#071126}
+body.election-mode .election-login h3{font-family:Georgia,"DM Serif Display",serif;color:#f0d183}
+body.election-mode .election-login p{color:#b6a684}
+body.election-mode .election-login .field label{color:#dac591}
+body.election-mode .election-login .field input{color:#f1dfb3;border-color:#705633;background:#030917}
+body.election-mode .election-login .field input:focus{border-color:#d4a24e;box-shadow:0 0 0 3px #b274a52b}
+body.election-mode .election-login .note{color:#cfb875;border:1px solid #6e512d;background:#16182a}
+body.election-mode .election-login .primary{color:#1c1407;background:linear-gradient(90deg,#b9823a,#edcc78)}
+body.election-mode .step-chip{color:#f2d081;border:1px solid #76582f;background:#15182b}
+
+body.election-mode .election-notice{color:#ead7a5;border-color:#8d6938;background:radial-gradient(circle at 50% 0,#633c704d,transparent 42%),#071126;box-shadow:0 22px 70px #0007}
+body.election-mode .election-notice h3{font-family:Georgia,"DM Serif Display",serif;color:#efd180}
+body.election-mode .election-notice p{color:#b8a985}
+body.election-mode .election-notice>span{color:#7f745d}
+body.election-mode .notice-icon{border:1px solid #c39649;color:#eac267;background:#11182b;box-shadow:0 0 0 10px #b77bc313,0 0 25px #9b5db25e}
+
+body.election-mode .ballot-room{margin:0 calc(50% - 50vw);padding:35px max(24px,calc((100vw - 1132px)/2)) 80px;background:
+  radial-gradient(circle at 12% 20%,#dcb25e 0 1px,transparent 2px),
+  radial-gradient(circle at 83% 32%,#a873d6 0 1px,transparent 2px),
+  repeating-radial-gradient(circle at 50% 50%,transparent 0 85px,#a57a3714 86px 87px),#040b1c;background-size:97px 97px,151px 151px,auto,auto}
+body.election-mode .official-ballot{color:#272116;background:#f7efd9;background-image:radial-gradient(circle at 50% 50%,transparent 0 90px,#a67e3010 91px 92px)}
+body.election-mode .official-ballot:before,body.election-mode .official-ballot:after{content:"☾  ✦  ☽";position:absolute;color:#8b692d;letter-spacing:7px;font:16px Georgia}
+body.election-mode .official-ballot:before{left:18px;bottom:13px}
+body.election-mode .official-ballot:after{right:18px;bottom:13px}
+
+body.election-mode .result-wait{max-width:none;margin:0;padding:60px 24px 90px;color:#e9d6a5;background:radial-gradient(circle at 50% 20%,#673b7147,transparent 30%)}
+body.election-mode .result-wait .big{font-family:Georgia,"DM Serif Display",serif;color:#f0d283}
+body.election-mode .result-wait>p{color:#b3a27f}
+body.election-mode .result-wait .section-label{color:#c79a4d}
+body.election-mode .countdown-card{border:1px solid #8e6938;background:radial-gradient(circle at 50% 0,#663a704d,transparent 46%),#061026;box-shadow:0 24px 65px #0008}
+
+@media(max-width:760px){body.election-mode #electionContent{padding-left:14px;padding-right:14px}body.election-mode #electionContent:has(.candidate-showcase),body.election-mode #electionContent:has(.results-dashboard){padding-left:0;padding-right:0}body.election-mode .ballot-room{padding-left:14px;padding-right:14px}}
+
+/* Admin-controlled candidate image framing */
+.candidate-editor-row{grid-template-columns:170px 1fr 35px}
+.candidate-editor-photo{position:relative;height:210px;background:linear-gradient(145deg,#131a2e,#4c2d55);isolation:isolate}
+.candidate-editor-photo:after{content:"ตัวอย่างกรอบภาพ";position:absolute;z-index:2;left:7px;right:7px;bottom:7px;padding:4px;border-radius:6px;color:#f4deb0;background:#030713b8;text-align:center;font-size:10px;pointer-events:none}
+.candidate-editor-photo img{display:block;width:100%;height:100%;object-fit:cover;transform-origin:center;will-change:transform}
+.candidate-photo,.card-portrait{overflow:hidden;isolation:isolate}
+.candidate-photo img,.card-portrait img{display:block;width:100%;height:100%;object-fit:cover;transform-origin:center}
+.candidate-crop-controls{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr)) auto;align-items:end;gap:12px;margin-top:13px;padding:14px;border:1px solid #dfca88;border-radius:13px;background:#fff8df}
+.candidate-crop-controls label{display:flex;justify-content:space-between;gap:8px;color:#695a35;font-size:12px}
+.candidate-crop-controls output{color:#a16f09;font-weight:700}
+.candidate-crop-controls input[type="range"]{width:100%;height:5px;margin-top:10px;padding:0;border:0;background:#dcc26e;accent-color:#8c5a9d}
+.reset-candidate-crop{height:38px;border:1px solid #c7a64d;border-radius:9px;color:#6f5720;background:#fffdf3;font:12px Kanit;cursor:pointer}.reset-candidate-crop:hover{background:#f7e7ad}
+@media(max-width:900px){.candidate-editor-row{grid-template-columns:120px 1fr 35px}.candidate-editor-photo{height:160px}.candidate-crop-controls{grid-template-columns:1fr 1fr}.reset-candidate-crop{grid-column:1/-1}}
+@media(max-width:600px){.candidate-editor-row{grid-template-columns:1fr 32px}.candidate-editor-photo{grid-column:1/-1;height:260px}.candidate-editor-fields{grid-column:1/-1}.candidate-remove{position:absolute;right:10px;top:10px;z-index:4}.candidate-crop-controls{grid-template-columns:1fr}}
+
+/* True-to-output candidate Crop Studio */
+.candidate-crop-launch{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:13px;padding:14px;border:1px solid #d8bc6d;border-radius:13px;background:linear-gradient(100deg,#fff8dd,#f4e6ba)}.candidate-crop-launch b,.candidate-crop-launch small{display:block}.candidate-crop-launch small{color:#756746}.open-crop-studio{border:1px solid #8f6935;border-radius:10px;padding:10px 15px;color:#f4deb0;background:#10182b;font:600 13px Kanit;cursor:pointer;box-shadow:0 5px 12px #57421c26}.open-crop-studio:hover{color:#fff0ad;background:#342343}
+.candidate-crop-studio{width:min(1120px,calc(100% - 28px));max-height:94vh;padding:0;border:1px solid #c59649;border-radius:22px;color:#e9d8aa;background:radial-gradient(circle at 50% 0,#633c7045,transparent 35%),#050d1e;box-shadow:0 30px 110px #000;overflow:auto}.candidate-crop-studio::backdrop{background:#01040be8}.candidate-crop-studio>header{position:sticky;z-index:10;top:0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:22px 26px;border-bottom:1px solid #76572f;background:#061026f5}.candidate-crop-studio>header small{color:#c0934c;letter-spacing:3px}.candidate-crop-studio>header h3{margin:4px 0;color:#f0d183;font:28px Georgia,"DM Serif Display",serif}.candidate-crop-studio>header p{margin:0;color:#a99a78}.candidate-crop-studio>header button{width:38px;height:38px;border:1px solid #795a32;border-radius:50%;color:#dabb75;background:#111a30;font-size:24px;cursor:pointer}.crop-studio-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:25px}.crop-studio-grid>section{min-width:0;padding:18px;border:1px solid #5f4729;border-radius:16px;background:#091326}.crop-preview-label{display:flex;justify-content:space-between;align-items:end;gap:15px;margin-bottom:15px}.crop-preview-label b{color:#efcf7d;font-size:19px}.crop-preview-label span{color:#8f8165;font-size:11px}.crop-intro-mock{max-width:390px;margin:auto;padding:18px 22px 25px;border:1px solid #7b632d;border-radius:190px 190px 24px 24px;text-align:center;background:linear-gradient(180deg,#e0b54e24,#ffffff08)}.crop-intro-frame{width:100%;aspect-ratio:1/1;border-radius:170px 170px 18px 18px}.crop-intro-mock>small{display:block;margin-top:15px;color:#d4a746}.crop-intro-mock h4{margin:4px;color:#f4e2af;font-size:21px}.crop-result-card{width:min(310px,100%);margin:auto;padding:0 13px 18px;border:2px solid #c39447;border-radius:15px;color:#20180d;background:#f5ead0;text-align:center;box-shadow:0 0 0 4px #071027,0 0 0 5px #8e6734}.crop-card-rank{margin:0 -13px 12px;padding:10px;border-radius:12px 12px 0 0;color:#fff;background:#9a3037;font:13px Georgia;letter-spacing:2px}.crop-result-frame{position:relative;width:100%;aspect-ratio:1.05/1;overflow:hidden}.crop-result-frame>b{position:absolute;left:8px;bottom:8px;padding:5px 9px;border-radius:18px;color:white;background:#050814c9}.crop-result-card h4{margin:13px 0 2px;font-size:18px}.crop-result-card>strong{font:38px Georgia;color:#9a3037}.crop-result-card>strong small{font:13px Kanit;color:#645637}.crop-drag-frame{position:relative;overflow:hidden;background:#11182a;cursor:grab;touch-action:none;user-select:none;box-shadow:inset 0 0 0 2px #dfb65b}.crop-drag-frame.dragging{cursor:grabbing;box-shadow:inset 0 0 0 3px #fff0a0,0 0 20px #a76fcb}.crop-drag-frame:after{content:"ลากรูปเพื่อจัดตำแหน่ง";position:absolute;left:50%;top:50%;padding:5px 9px;border-radius:15px;color:#fff1c2;background:#0306119e;font-size:10px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:.2s}.crop-drag-frame:hover:after,.crop-drag-frame.dragging:after{opacity:1}.crop-drag-frame img{width:100%;height:100%;display:block;object-fit:cover;transform-origin:center;pointer-events:none}.crop-zoom-control{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-top:22px;color:#c8b482;font-size:13px}.crop-zoom-control input{width:100%;accent-color:#bc82d0}.crop-zoom-control output{color:#efca72;font-weight:700}.crop-reset{display:block;margin:10px 0 0 auto;border:1px solid #74572f;border-radius:8px;padding:6px 10px;color:#bca77a;background:#111a2e;font:11px Kanit;cursor:pointer}.candidate-crop-studio>footer{position:sticky;z-index:10;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 26px;border-top:1px solid #76572f;background:#061026f5}.candidate-crop-studio>footer>span{color:#ad9a71}.candidate-crop-studio>footer>div{display:flex;gap:9px}.save-crop-studio{border:1px solid #e0b55d;border-radius:10px;padding:10px 16px;color:#181105;background:linear-gradient(90deg,#bd873c,#edcf7c);font:600 14px Kanit;cursor:pointer}
+@media(max-width:760px){.candidate-crop-launch{align-items:stretch;flex-direction:column}.crop-studio-grid{grid-template-columns:1fr;padding:14px}.candidate-crop-studio>header{padding:18px}.candidate-crop-studio>header h3{font-size:23px}.candidate-crop-studio>footer{align-items:stretch;flex-direction:column;padding:14px}.candidate-crop-studio>footer>div{justify-content:flex-end}.crop-preview-label{align-items:flex-start;flex-direction:column;gap:2px}}
+
+/* Sacred typography and cinematic celestial revelation */
+#election h2,.results-dashboard h3,.prophecy-title h4,.winner-prophecy b,.room-summary h4,.room-map-head h4{font-family:"Chonburi","Charm",serif;font-weight:400;letter-spacing:.03em;text-shadow:0 2px 0 #34210a,0 0 22px #dcae5c3d}
+#election>.title h2{font-size:clamp(43px,6vw,78px);background:linear-gradient(180deg,#fff1b8 0,#e8bd62 52%,#9b6628 100%);background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-stroke:.5px #f4da90;filter:drop-shadow(0 5px 0 #32200b) drop-shadow(0 0 20px #b97547)}
+.result-eyebrow,.results-header small,.prophecy-title small,.card-rank,.card-back>span,.card-back>small{font-family:"Cinzel Decorative",Georgia,serif}
+.results-header h3{font-size:clamp(43px,6vw,76px);background:linear-gradient(#fff2b5,#d99c3e);background-clip:text;-webkit-background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 #442710)}
+.result-cinematic{position:absolute;z-index:100;inset:0;min-height:100vh;display:grid;place-items:center;overflow:hidden;color:#f7dda0;background:radial-gradient(circle at center,#382147 0,#071126 35%,#01040d 75%);pointer-events:none;animation:cinematicExit 5.4s ease forwards}.cinematic-stars{position:absolute;inset:0;background:radial-gradient(circle,#fff6c7 0 1px,transparent 2px) 0 0/55px 55px,radial-gradient(circle,#c486f1 0 1px,transparent 2px) 18px 27px/83px 83px;animation:starsRush 4.4s ease-in forwards}.cinematic-zodiac{position:absolute;width:850px;height:850px;display:flex;align-items:flex-start;justify-content:center;padding-top:22px;border:1px solid #c18d42;border-radius:50%;font:24px Georgia;color:#d3a14c;word-spacing:17px;box-shadow:0 0 0 45px #a6742910,0 0 0 46px #7c572b,0 0 0 95px #8b5c2410,0 0 0 96px #563c22;animation:zodiacAwaken 4.6s cubic-bezier(.2,.8,.2,1) both}.cinematic-zodiac:before,.cinematic-zodiac:after{content:"";position:absolute;inset:12%;border:1px dashed #b6823e;border-radius:50%;animation:slowSpin 18s linear infinite}.cinematic-zodiac:after{inset:25%;border-style:solid;animation-direction:reverse}.cinematic-portal{position:absolute;width:360px;height:360px;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle,#fff9ce 0 2%,#f4bf5d 3% 5%,#a26fd2 7% 14%,#26133e 24%,#071026 55%,transparent 70%);box-shadow:0 0 45px #dcaeff,0 0 120px #d48a42;animation:portalAwaken 4.8s ease both}.cinematic-portal i{position:absolute;inset:9%;border:2px solid #d8a750;border-radius:50%;clip-path:polygon(50% 0,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0 50%,39% 36%);animation:slowSpin 9s linear infinite}.cinematic-portal i:nth-child(2){inset:19%;transform:rotate(45deg);animation-direction:reverse}.cinematic-portal i:nth-child(3){inset:31%;border-style:dashed}.cinematic-portal>span{font-size:95px;color:#fff5bd;text-shadow:0 0 15px white,0 0 45px #e2b34d;animation:sigilBeat 1.8s ease-in-out infinite}.cinematic-copy{position:relative;margin-top:590px;text-align:center;animation:ritualText 4.7s ease both}.cinematic-copy small,.cinematic-copy b,.cinematic-copy em{display:block}.cinematic-copy small{font:700 15px "Cinzel Decorative",serif;letter-spacing:7px;color:#c99a4c}.cinematic-copy b{font:400 clamp(40px,6vw,75px) "Chonburi",serif;background:linear-gradient(#fff2bc,#dba84c);background-clip:text;-webkit-background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 #3e240b)}.cinematic-copy em{color:#a9956c;font:22px "Charm",serif}
+
+/* Major Arcana card redesign */
+.prophecy-stage{min-height:800px;background:radial-gradient(circle at 50% 52%,#78488630,transparent 23%),repeating-conic-gradient(from 0deg,#d5aa5612 0 .5deg,transparent .8deg 15deg),#071126}.result-card-deck{min-height:560px;padding:55px 10px}.prophecy-card{width:clamp(215px,25vw,310px);height:500px;margin:0 -30px;filter:drop-shadow(0 22px 18px #000c)}.prophecy-card.first-place{width:clamp(245px,29vw,345px);height:545px;transform:translateY(-18px) rotate(var(--rank-angle))}.prophecy-card-inner{border-radius:20px}.card-front,.card-back{border:3px solid #e3bc69;border-radius:20px;box-shadow:inset 0 0 0 3px #15102a,inset 0 0 0 5px #a47734,inset 0 0 28px #0008,0 0 0 2px #4d321b,0 22px 45px #000b}.card-back{background:radial-gradient(circle at center,#7c4c8445 0 10%,transparent 11%),repeating-conic-gradient(from 0deg,#b6843b22 0 1deg,transparent 1deg 15deg),repeating-radial-gradient(circle,#071027 0 28px,#a778332e 29px 30px),#030817}.card-back>b{margin-top:18px;font:35px "Chonburi",serif;color:#f2d589;text-shadow:0 0 20px #d99e4d}.card-back>span{margin-top:5px;font-size:15px;letter-spacing:5px}.card-back>small{letter-spacing:2px}.tarot-sigil{width:155px;height:155px;border:2px solid #e0b660;box-shadow:0 0 0 8px #0b142a,0 0 0 9px #956c36,0 0 45px #9f6bc0;background:radial-gradient(circle,#fff7c9 0 2%,#be7cdb 4% 12%,#35154e 22%,#081027 52%)}.tarot-sigil span{font-size:25px;margin:0 10px}.tarot-corner{position:absolute;z-index:5;width:42px;height:42px;border-color:#f0cc7c}.tarot-corner:after{content:"✦";position:absolute;color:#ffe59c;text-shadow:0 0 12px white}.tarot-corner.c1{left:11px;top:11px;border-left:2px solid;border-top:2px solid}.tarot-corner.c1:after{left:6px;top:4px}.tarot-corner.c2{right:11px;top:11px;border-right:2px solid;border-top:2px solid}.tarot-corner.c2:after{right:6px;top:4px}.tarot-corner.c3{left:11px;bottom:11px;border-left:2px solid;border-bottom:2px solid}.tarot-corner.c3:after{left:6px;bottom:4px}.tarot-corner.c4{right:11px;bottom:11px;border-right:2px solid;border-bottom:2px solid}.tarot-corner.c4:after{right:6px;bottom:4px}.card-front{background:linear-gradient(145deg,#fff5d7,#e9d39b 60%,#b98b42);color:#211608}.card-front:before{inset:10px;border:2px solid var(--candidate-color);box-shadow:inset 0 0 0 3px #fff1c8,inset 0 0 0 4px #8a612d}.arcana-number{position:absolute;z-index:4;left:18px;top:48px;width:42px;height:42px;display:grid;place-items:center;border:1px solid #ebcd85;border-radius:50%;color:#f9e4a9;background:#11162a;font:15px "Cinzel Decorative",serif;box-shadow:0 0 15px var(--candidate-color)}.card-rank{padding:13px;background:linear-gradient(90deg,#171127,var(--candidate-color),#171127);font-size:12px;letter-spacing:3px;text-shadow:0 1px 4px #000}.card-portrait{height:290px;margin:13px 18px 0;border:2px solid #6b4823;box-shadow:0 0 0 4px #f6dfaa,0 0 0 5px #7b5529,inset 0 0 25px #000}.card-portrait:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 68%,#07040e99);pointer-events:none}.card-portrait b{z-index:2;left:50%;bottom:12px;transform:translateX(-50%);white-space:nowrap;border:1px solid #d8b365;background:#08091be6}.portrait-moon{position:absolute;z-index:3;right:9px;top:8px;color:#ffe597;font-size:28px;text-shadow:0 0 12px white}.card-result{padding:18px 20px 5px}.card-result>small{display:block;color:#84672f;font:16px "Charm",serif}.card-result h5{margin:2px 0 4px;font-family:"Chonburi",serif;font-size:18px}.card-result>div{display:flex;align-items:baseline;justify-content:center;gap:6px}.card-result strong{font:700 52px "Cinzel Decorative",Georgia,serif;text-shadow:0 2px #fff,0 0 16px var(--candidate-color)}.card-oracle-mark{margin-top:auto;padding:8px;color:#78582b;font-family:Georgia;letter-spacing:12px}.card-divine-rays{position:absolute;z-index:-1;inset:-70px;background:repeating-conic-gradient(from 0deg,var(--candidate-color) 0 .5deg,transparent .7deg 15deg);opacity:0;transition:opacity 1s}.prophecy-card.revealed .card-divine-rays{opacity:.18;animation:slowSpin 55s linear infinite}.prophecy-card.first-place.revealed .card-divine-rays{opacity:.42;animation-duration:22s}.prophecy-card.first-place .card-front{box-shadow:inset 0 0 0 3px #15102a,inset 0 0 0 5px #f0cf82,0 0 0 4px #070c1b,0 0 0 7px #e7bd65,0 0 45px var(--candidate-color),0 0 100px #d5a34e80}.winner-prophecy{padding:18px}.winner-prophecy span{font:17px "Cinzel Decorative",serif;letter-spacing:2px}.winner-prophecy b{font-size:32px;background:linear-gradient(#fff0ad,#d39a3f);background-clip:text;-webkit-background-clip:text;color:transparent}.winner-prophecy small{font:20px "Charm",serif;color:#d8bc78}
+@keyframes cinematicExit{0%,82%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden}}@keyframes zodiacAwaken{0%{opacity:0;transform:scale(2.2) rotate(-30deg)}25%{opacity:1}75%{transform:scale(1) rotate(0)}100%{opacity:.8;transform:scale(.92) rotate(5deg)}}@keyframes portalAwaken{0%{opacity:0;transform:scale(0) rotate(-90deg)}35%{opacity:1;transform:scale(1.15) rotate(0)}70%,100%{transform:scale(1)}}@keyframes sigilBeat{50%{transform:scale(1.15);filter:brightness(1.5)}}@keyframes ritualText{0%,35%{opacity:0;transform:translateY(35px);letter-spacing:.3em}60%,100%{opacity:1;transform:none}}@keyframes starsRush{0%{transform:scale(.6);opacity:.2}80%,100%{transform:scale(1.6);opacity:1}}
+@media(max-width:760px){.result-cinematic{min-height:100svh}.cinematic-zodiac{width:620px;height:620px;font-size:16px}.cinematic-portal{width:260px;height:260px}.cinematic-copy{margin-top:470px}.prophecy-stage{min-height:720px}.result-card-deck{min-height:515px}.prophecy-card,.prophecy-card.first-place{flex-basis:245px;width:245px;height:465px}.prophecy-card.first-place{height:500px}.card-portrait{height:250px}.card-result strong{font-size:42px}}
+
+/* The sacred chamber — grand room-by-room results */
+.sacred-room-dashboard{display:block}.chamber-title{position:relative;display:flex;align-items:center;justify-content:center;gap:28px;padding:28px 20px;text-align:center;border:1px solid #7f5b2e;border-radius:18px 18px 0 0;background:radial-gradient(circle at 50% 120%,#7e497f4a,transparent 45%),linear-gradient(90deg,#040a17,#101b35,#040a17);overflow:hidden}.chamber-title:before,.chamber-title:after{content:"";position:absolute;top:50%;width:28%;height:1px;background:linear-gradient(90deg,transparent,#d8a951)}.chamber-title:before{left:0}.chamber-title:after{right:0;transform:scaleX(-1)}.chamber-title>span{z-index:1;width:58px;height:58px;display:grid;place-items:center;border:1px solid #d3a34e;border-radius:50%;color:#efca75;background:#071027;font:34px Georgia;box-shadow:0 0 25px #9e6fc077}.chamber-title div{position:relative;z-index:2}.chamber-title small{font:12px "Cinzel Decorative",serif;letter-spacing:4px;color:#c39549}.chamber-title h4{margin:5px;font:38px "Chonburi",serif;color:#efd285;text-shadow:0 3px #3a240e,0 0 25px #d7a75155}.chamber-title p{margin:0;color:#9e9173;font:18px "Charm",serif}
+.constellation-gates{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:1px;padding:0;border:1px solid #79572d;border-top:0;border-radius:0;background:#79572d;overflow:visible}.constellation-gates button{position:relative;isolation:isolate;display:flex;min-width:0;height:190px;margin:0;padding:18px 8px;flex-direction:column;align-items:center;justify-content:center;border:0;border-radius:0;color:#9d8b65;background:radial-gradient(circle at 50% 45%,#41294a55,transparent 35%),#050d1d;text-align:center;overflow:hidden;transition:.45s cubic-bezier(.2,.8,.2,1)}.constellation-gates button:before{content:"";position:absolute;inset:8px;border:1px solid #69502e;clip-path:polygon(0 0,35% 0,50% 13%,65% 0,100% 0,100% 100%,65% 100%,50% 87%,35% 100%,0 100%)}.constellation-gates button:after{content:"✦";position:absolute;left:50%;top:14px;color:#775c35;transform:translateX(-50%)}.constellation-gates button .gate-orbit{position:absolute;width:105px;height:105px;border:1px solid #6d512d;border-radius:50%;background:repeating-conic-gradient(transparent 0 29deg,#9c743a 29.5deg 30deg);opacity:.5;transition:.6s}.constellation-gates button>span{position:relative;z-index:2;font:43px Georgia;color:#a1814c;text-shadow:0 0 15px #6f4a84}.constellation-gates button small{position:relative;z-index:2;font:8px "Cinzel Decorative",serif;letter-spacing:1px}.constellation-gates button b{position:relative;z-index:2;font:24px "Chonburi",serif}.constellation-gates button em{position:relative;z-index:2;margin-top:7px;color:#776b50;font:11px Kanit;font-style:normal;opacity:0;transform:translateY(8px);transition:.3s}.constellation-gates button:hover,.constellation-gates button.active{z-index:3;color:#f5dda0;background:radial-gradient(circle at 50% 45%,#835a9655,transparent 35%),#121a31;transform:translateY(-8px) scale(1.035);box-shadow:0 15px 35px #000,0 0 0 1px #d7a854,0 0 32px #9567b980}.constellation-gates button.active:before{border-color:#e1b963;box-shadow:inset 0 0 25px #ad77c733}.constellation-gates button.active .gate-orbit{border-color:#e0b65d;opacity:1;animation:slowSpin 12s linear infinite}.constellation-gates button.active>span{color:#ffe9a5;text-shadow:0 0 8px white,0 0 28px #bb79df}.constellation-gates button:hover em,.constellation-gates button.active em{opacity:1;transform:none}
+.room-map-host{min-height:820px;margin-top:24px;padding:0;border:1px solid #8b6635;border-radius:20px;background:radial-gradient(circle at 50% 45%,#643d7044,transparent 32%),linear-gradient(145deg,#050b18,#0b1730 55%,#040914);box-shadow:0 28px 70px #0009,inset 0 0 90px #000;animation:chamberReveal .8s ease both;overflow:hidden}.room-revelation{position:relative}.room-map-head{position:relative;display:grid;grid-template-columns:105px 1fr 125px;gap:22px;padding:28px 34px;border-bottom:1px solid #74552e;background:linear-gradient(90deg,#040916cc,#111b34dd,#040916cc)}.room-map-head:after{content:"";position:absolute;left:12%;right:12%;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,#e2b45c,transparent)}.room-sacred-seal{position:relative;width:94px;height:94px;display:grid;place-items:center;border:1px solid #d1a04e;border-radius:50%;background:radial-gradient(circle,#713f7c66,#071027 62%);box-shadow:0 0 0 7px #071027,0 0 0 8px #805d31,0 0 28px #9c69b8}.room-sacred-seal i{position:absolute;inset:9px;border:1px dashed #d2a454;border-radius:50%;animation:slowSpin 13s linear infinite}.room-sacred-seal span{font:48px Georgia;color:#ffe6a0;text-shadow:0 0 12px white,0 0 28px #b779d5}.room-map-head h4{margin:5px 0;font-size:34px;background:linear-gradient(#fff1b1,#dca247);background-clip:text;-webkit-background-clip:text;color:transparent}.room-map-head p{margin:0;color:#a39472;font:17px "Charm",serif}.turnout-orb{width:105px;height:105px;display:flex;align-items:center;justify-content:center;flex-direction:column;border:1px solid #d3a450;border-radius:50%;background:radial-gradient(circle,#78508655,#071027 68%);box-shadow:0 0 25px #80549b55}.turnout-orb strong{font:38px "Cinzel Decorative",serif;color:#f0c967}.turnout-orb span,.turnout-orb small{color:#9c8b66;font-size:10px}
+.sacred-map-frame{position:relative;margin:25px 30px;padding:10px;border:1px solid #8b6636;border-radius:280px 280px 18px 18px;background:linear-gradient(180deg,#b8893e22,transparent 20%);box-shadow:inset 0 0 0 5px #050b19,inset 0 0 0 6px #4d3924}.frame-wing{position:absolute;z-index:2;top:52%;width:100px;height:180px;border-color:#b18343}.frame-wing.left{left:-22px;border-left:2px solid;border-top:2px solid;border-radius:80% 0 0}.frame-wing.right{right:-22px;border-right:2px solid;border-top:2px solid;border-radius:0 80% 0}.frame-wing:after{content:"☾ ✦ ☽";position:absolute;color:#a87d3c;writing-mode:vertical-rl;letter-spacing:14px}.frame-wing.left:after{left:8px}.frame-wing.right:after{right:8px}.sacred-map-frame .parliament-map{height:570px;margin:0;border:0;border-radius:260px 260px 9px 9px;background:radial-gradient(circle at 50% 77%,#9c68ad3b 0 7%,transparent 8%),radial-gradient(ellipse at 50% 100%,#51345f66,transparent 58%),linear-gradient(#030817cc,#071329);box-shadow:inset 0 0 75px #000;overflow:hidden}.chamber-zodiac-ring{position:absolute;left:50%;bottom:-205px;width:680px;height:680px;padding-top:22px;border:1px solid #9c7239;border-radius:50%;color:#99743e;text-align:center;font:18px Georgia;word-spacing:13px;transform:translateX(-50%);box-shadow:0 0 0 42px #a4782910,0 0 0 43px #624727}.chamber-zodiac-ring:after{content:"";position:absolute;inset:12%;border:1px dashed #8e6837;border-radius:50%;animation:slowSpin 45s linear infinite}.map-stars{top:42px;color:#d5aa55;text-shadow:0 0 10px white;animation:starScript 3s ease-in-out infinite}.seat-orbit-line{position:absolute;left:50%;bottom:-35px;border:1px solid #76572f;border-radius:50%;transform:translateX(-50%);pointer-events:none}.orbit-line-one{width:300px;height:300px}.orbit-line-two{width:390px;height:390px}.orbit-line-three{width:480px;height:480px}.seat-orbits{bottom:95px}.parliament-seat{width:19px;height:19px;left:-9px;top:-9px;border:2px solid #edcf87;border-radius:50% 50% 45% 45%;box-shadow:0 0 0 3px #061026,0 0 12px var(--seat-color),0 0 25px var(--seat-color);animation:gemSeatRise .65s var(--seat-delay) cubic-bezier(.2,.9,.2,1.2) both}.parliament-seat:after{content:"";position:absolute;inset:3px;border-radius:50%;background:linear-gradient(135deg,#fff9d1,var(--seat-color) 35%,#120b20 85%)}.parliament-seat.voted:hover{transform:rotate(var(--seat-angle)) translateY(calc(-1 * var(--seat-radius))) rotate(calc(-1 * var(--seat-angle))) scale(1.7);filter:brightness(1.6)}.speaker-oracle{bottom:27px;width:145px;padding:12px;border:2px solid #e0b35b;border-radius:70px 70px 12px 12px;background:radial-gradient(circle at 50% 0,#8b5598,#11152b 55%);box-shadow:0 0 0 5px #071027,0 0 0 6px #856033,0 0 35px #a36fc0}.speaker-oracle i{position:absolute;inset:-19px;border:1px dashed #d0a14f;border-radius:80px 80px 18px 18px;animation:oracleBreathe 2.5s ease-in-out infinite}.speaker-oracle span{font-size:38px;color:#ffe69b;text-shadow:0 0 12px white}.speaker-oracle b{font:13px "Chonburi",serif;color:#efd286}.speaker-oracle small{font:7px "Cinzel Decorative",serif;color:#a88f62}.floor-sigil{position:absolute;left:50%;bottom:170px;color:#d6aa5840;font-size:150px;transform:translateX(-50%);text-shadow:0 0 40px #a36bc0}
+.sacred-tallies{padding:0 30px 32px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}.sacred-tallies>div{position:relative;min-height:95px;grid-template-columns:48px 10px 1fr auto;padding:17px;border-color:#74552f;background:radial-gradient(circle at 0 50%,var(--candidate-color),transparent 2%),linear-gradient(110deg,#10192f,#061026);box-shadow:inset 0 0 25px #0006;overflow:hidden}.sacred-tallies>div:after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,transparent,var(--candidate-color),transparent)}.tally-arcana{width:42px;height:42px;display:grid!important;place-items:center;border:1px solid #d2a754;border-radius:50%;color:#ebcd80!important;background:#080d1d;font:13px "Cinzel Decorative",serif;box-shadow:0 0 13px var(--candidate-color)}.sacred-tallies>div>span:not(.tally-arcana){font-family:"Chonburi",serif;color:#ead39a}.sacred-tallies>div>span small{margin-top:3px;font-family:Kanit}.sacred-tallies>div>b{font:31px "Cinzel Decorative",serif}.sacred-tallies .not-voted{--candidate-color:#4c5872}
+/* Make overview feel like the first hall of the same temple */
+.overview-layout{position:relative;padding:18px;border:1px solid #7d5b30;border-radius:22px;background:linear-gradient(90deg,#040916,#10172b,#040916);box-shadow:0 25px 70px #0008}.overview-layout:before,.overview-layout:after{content:"✦ ☾ ✧ ☽ ✦";position:absolute;z-index:3;left:50%;color:#b98943;letter-spacing:12px;transform:translateX(-50%)}.overview-layout:before{top:-13px}.overview-layout:after{bottom:-13px}.room-summary{box-shadow:inset 0 0 45px #0006,0 15px 35px #0006}
+@keyframes chamberReveal{from{opacity:0;transform:perspective(900px) rotateX(8deg) translateY(35px)}to{opacity:1;transform:none}}@keyframes gemSeatRise{from{opacity:0;transform:rotate(var(--seat-angle)) translateY(0) scale(.1)}to{opacity:1;transform:rotate(var(--seat-angle)) translateY(calc(-1 * var(--seat-radius))) rotate(calc(-1 * var(--seat-angle))) scale(1)}}@keyframes starScript{50%{opacity:.35;letter-spacing:38px}}@keyframes oracleBreathe{50%{opacity:.35;transform:scale(1.08)}}
+@media(max-width:800px){.chamber-title>span{display:none}.constellation-gates{display:flex;overflow-x:auto}.constellation-gates button{flex:0 0 145px}.room-map-head{grid-template-columns:72px 1fr}.room-sacred-seal{width:65px;height:65px}.room-sacred-seal span{font-size:32px}.turnout-orb{grid-column:1/-1;width:100%;height:auto;padding:10px;border-radius:12px}.turnout-orb strong,.turnout-orb span,.turnout-orb small{display:inline;margin:0 3px}.sacred-map-frame{margin:15px 8px}.sacred-map-frame .parliament-map{height:450px}.chamber-zodiac-ring{width:570px;height:570px}.seat-orbits{bottom:70px;transform:scale(.78)}.sacred-tallies{padding:0 10px 20px}.frame-wing{display:none}}
+
+/* High-contrast sacred typography and readable result numerals */
+.results-header h3,.room-map-head h4,.winner-prophecy b{
+  color:#ffe19a;
+  background:none;
+  -webkit-text-fill-color:#ffe19a;
+  -webkit-text-stroke:0;
+  filter:none;
+  text-shadow:0 3px 0 #291706,0 0 8px #000,0 0 20px #d99b3f55;
+}
+.results-header h3{font-family:"Chonburi",Kanit,serif;font-size:clamp(43px,6vw,72px);line-height:1.2}
+.results-header p,.room-map-head p,.winner-prophecy small{color:#dfc68d;text-shadow:0 2px 5px #000;font-weight:500}
+.results-header small,.room-map-head small,.prophecy-title small,.chamber-title small{color:#e6b75f;text-shadow:0 2px 5px #000;letter-spacing:3px;font-weight:700}
+.room-map-head h4{font-family:"Chonburi",Kanit,serif;font-size:clamp(27px,3.5vw,43px);line-height:1.35}
+.room-map-head p{font-family:Kanit,sans-serif;font-size:15px;line-height:1.6}
+.winner-prophecy b{display:block;font-family:"Chonburi",Kanit,serif;font-size:clamp(25px,3vw,38px);line-height:1.45}
+.winner-prophecy span{color:#f1d083;text-shadow:0 2px 5px #000;font-weight:700}
+.winner-prophecy small{font-family:Kanit,sans-serif;font-size:17px}
+.sacred-tallies>div>span:not(.tally-arcana){color:#ffe4a4;font-family:Kanit,sans-serif;font-size:18px;font-weight:700;line-height:1.35;text-shadow:0 2px 5px #000}
+.sacred-tallies>div>span small{color:#bfb18d;font-size:12px;font-weight:400}
+.sacred-tallies>div>b,.turnout-orb strong,.card-result strong{
+  color:var(--candidate-color,#ffe09a);
+  color:color-mix(in srgb,var(--candidate-color,#d7a34e) 62%,white 38%);
+  font-family:Kanit,sans-serif;
+  font-weight:800;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.03em;
+  -webkit-text-stroke:.5px currentColor;
+  text-shadow:0 2px 0 #000,0 0 12px var(--candidate-color,#d7a34e);
+}
+.sacred-tallies>div>b{font-size:42px;line-height:1}
+.sacred-tallies>div>b small{margin-top:5px;color:#d2c39e;font-size:11px;font-weight:500;letter-spacing:0;-webkit-text-stroke:0;text-shadow:none}
+.turnout-orb strong{color:#ffe098;font-size:42px}
+.sacred-tallies .not-voted>b{color:#dce5ff;text-shadow:0 2px 0 #000,0 0 12px #8292bd}
+.card-result strong{font-size:58px}
+.summary-row:not(.summary-head) span,.summary-row:not(.summary-head) strong{color:#f8e3af;font-size:17px;font-weight:800}
+.candidate-legend b{color:#ffe3a4;font-size:20px;font-weight:800}
+.result-status b{color:#ffe29d;font-size:18px;font-weight:800}
+@media(max-width:650px){.results-header h3{font-size:40px}.room-map-head h4{font-size:27px}.sacred-tallies>div>b{font-size:36px}.card-result strong{font-size:48px}}
+
+/* Keep the original Roman/Arcana numeral style, with stronger legibility */
+.card-result strong,.sacred-tallies>div>b,.turnout-orb strong,.candidate-legend b,.result-status b,.summary-row:not(.summary-head) span,.summary-row:not(.summary-head) strong{
+  font-family:"Cinzel Decorative","Times New Roman",serif;
+  font-weight:700;
+  font-variant-numeric:lining-nums tabular-nums;
+  letter-spacing:.01em;
+  -webkit-text-stroke:.35px #120b08;
+  paint-order:stroke fill;
+  text-shadow:0 1px 0 #120b08,0 3px 6px #000a,0 0 6px var(--candidate-color,#d7a34e);
+}
+.card-result strong,.sacred-tallies>div>b{
+  color:#fff0bd;
+  color:color-mix(in srgb,var(--candidate-color,#d7a34e) 42%,white 58%);
+}
+.card-result strong{font-size:58px;line-height:1.05}
+.sacred-tallies>div>b{font-size:40px;line-height:1}
+.turnout-orb strong{color:#ffe19a;font-size:40px}
+.candidate-legend b,.result-status b{color:#ffe7ad}
+.summary-row:not(.summary-head) span,.summary-row:not(.summary-head) strong{color:#fff0c3;font-size:17px}
+.sacred-tallies .not-voted>b{color:#e5ebff;text-shadow:0 2px 0 #080b14,0 4px 8px #000b,0 0 8px #8292bd}
+@media(max-width:650px){.card-result strong{font-size:50px}.sacred-tallies>div>b{font-size:35px}}
+
+/* Result cards v2 — celestial portrait cards with a frameless arched image. */
+.result-card-deck{gap:clamp(8px,1.5vw,22px);padding-inline:24px}
+.prophecy-card,.prophecy-card.first-place{margin:0 -18px}
+.prophecy-card-inner{-webkit-transform-style:preserve-3d;transform-style:preserve-3d;filter:none}
+.card-front,.card-back{-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.card-front,.card-back{border:1px solid #e7c875;border-radius:34px 34px 24px 24px}
+.card-front{
+  isolation:isolate;
+  padding:10px 10px 16px;
+  background:radial-gradient(circle at 50% 17%,color-mix(in srgb,var(--candidate-color) 34%,transparent),transparent 42%),linear-gradient(165deg,#11172c 0 54%,#f4e5bb 54.2% 100%);
+  color:#1e170d;
+  box-shadow:inset 0 0 0 5px #080d1c,inset 0 0 0 6px #b98b3f,0 22px 55px #000c;
+}
+.card-front:before{
+  inset:7px;
+  border:1px solid #eed58d;
+  border-radius:27px 27px 18px 18px;
+  box-shadow:inset 0 0 0 2px #080d1c,inset 0 0 0 3px color-mix(in srgb,var(--candidate-color) 58%,#e8c56e);
+}
+.card-rank{
+  z-index:5;
+  margin:0 3px;
+  padding:12px 45px;
+  border-radius:24px 24px 10px 10px;
+  color:#f8e7ae;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--candidate-color) 72%,#11152a),transparent);
+  font-size:10px;
+  letter-spacing:3.5px;
+}
+.arcana-number{left:22px;top:54px;width:45px;height:45px;border-color:#f1d17d;background:#080d1ce8;backdrop-filter:blur(5px)}
+.card-portrait{
+  z-index:2;
+  height:310px;
+  margin:8px 12px -42px;
+  border:0;
+  border-radius:50% 50% 44% 44% / 25% 25% 12% 12%;
+  background:radial-gradient(circle at 50% 32%,color-mix(in srgb,var(--candidate-color) 55%,#18304c),#07101f 72%);
+  box-shadow:none;
+  -webkit-mask-image:linear-gradient(#000 0 82%,transparent 100%);
+  mask-image:linear-gradient(#000 0 82%,transparent 100%);
+}
+.card-portrait:before{
+  content:none;
+}
+.card-portrait:after{background:radial-gradient(ellipse at 50% 104%,#f4e5bb 0 2%,transparent 57%),linear-gradient(180deg,transparent 62%,#080d1c6b 82%,transparent)}
+.card-portrait img{border:0;border-radius:inherit;filter:saturate(1.04) contrast(1.06)}
+.card-portrait b{left:50%;bottom:48px;padding:6px 13px;border:1px solid #e9ca78;background:#080d1ce8;box-shadow:0 8px 20px #0008;transform:translateX(-50%)}
+.portrait-moon{right:17px;top:15px}
+.card-result{
+  z-index:4;
+  margin:0 7px;
+  padding:47px 12px 2px;
+  border-radius:0 0 18px 18px;
+  background:linear-gradient(180deg,transparent,#f4e5bb 25%);
+}
+.card-result>small{color:#806837;font-size:15px}
+.card-result h5{margin:3px auto 4px;max-width:92%;font-size:clamp(16px,1.55vw,20px);white-space:normal;line-height:1.35}
+.card-result>div{position:relative;margin-top:2px}
+.card-result strong{color:color-mix(in srgb,var(--candidate-color) 76%,#25160c);text-shadow:0 2px #fff5d2,0 0 18px color-mix(in srgb,var(--candidate-color) 42%,transparent)}
+.card-oracle-mark{z-index:4;padding:5px 0 0;text-align:center}
+.prophecy-card.first-place .card-front{box-shadow:inset 0 0 0 5px #080d1c,inset 0 0 0 7px #f0cf82,0 0 0 3px #070c1b,0 0 0 6px #e7bd65,0 0 52px var(--candidate-color),0 0 110px #d5a34e66}
+.prophecy-card.first-place .card-portrait{height:330px}
+.crop-result-card{padding:10px 12px 18px;border-radius:32px 32px 20px 20px;background:linear-gradient(165deg,#10172b 0 64%,#f3e4b8 64.5%);box-shadow:0 0 0 4px #071027,0 0 0 5px #d1a550}
+.crop-card-rank{margin:0 0 8px;border-radius:22px 22px 9px 9px;background:linear-gradient(90deg,transparent,#923b4c,transparent)}
+.crop-result-frame{aspect-ratio:1/1.18;border:0!important;border-radius:50% 50% 44% 44% / 24% 24% 12% 12%;box-shadow:none!important;-webkit-mask-image:linear-gradient(#000 0 84%,transparent);mask-image:linear-gradient(#000 0 84%,transparent)}
+.crop-result-frame>b{bottom:35px}
+.crop-result-card h4{position:relative;margin:-24px 0 3px;color:#24190d}
+@media(max-width:760px){.result-card-deck{padding-inline:18px}.prophecy-card,.prophecy-card.first-place{margin-right:-24px}.card-portrait{height:275px}.prophecy-card.first-place .card-portrait{height:290px}.card-result{padding-top:42px}}
+
+/* Sacred night finish — keep the lower panel inside the celestial world. */
+.card-front{
+  background:radial-gradient(circle at 50% 17%,color-mix(in srgb,var(--candidate-color) 38%,transparent),transparent 42%),radial-gradient(ellipse at 50% 76%,color-mix(in srgb,var(--candidate-color) 18%,transparent),transparent 48%),linear-gradient(165deg,#11172c 0 52%,#0b1225 52.2% 76%,#050914 100%);
+  color:#f2dfaa;
+}
+.card-portrait:after{
+  background:radial-gradient(ellipse at 50% 106%,color-mix(in srgb,var(--candidate-color) 30%,#11182b) 0 3%,transparent 58%),linear-gradient(180deg,transparent 57%,#080d1b8f 78%,#0b1225 100%);
+}
+.card-result{
+  background:linear-gradient(180deg,transparent 0,#0b1225 22%,#080d1b 72%,#050914 100%);
+}
+.card-result:before{
+  content:"✦  ☾  ✧  ☽  ✦";
+  display:block;
+  margin:0 auto 3px;
+  color:#b88d45;
+  font:8px Georgia,serif;
+  letter-spacing:7px;
+  opacity:.8;
+}
+.card-result>small{color:#b99b61;text-shadow:0 0 12px #d5ae5555}
+.card-result h5{color:#f5dda0;text-shadow:0 2px 3px #000,0 0 18px color-mix(in srgb,var(--candidate-color) 28%,transparent)}
+.card-result strong{
+  color:color-mix(in srgb,var(--candidate-color) 68%,#ffe59a);
+  text-shadow:0 2px 0 #03050b,0 0 8px color-mix(in srgb,var(--candidate-color) 72%,#fff),0 0 25px color-mix(in srgb,var(--candidate-color) 55%,transparent);
+}
+.card-result span{color:#c4ad78}
+.card-oracle-mark{position:relative;color:#c79d51;text-shadow:0 0 12px #d8ad5866}
+.card-oracle-mark:before,.card-oracle-mark:after{content:"";position:absolute;top:50%;width:22%;height:1px;background:linear-gradient(90deg,transparent,#9f773b)}
+.card-oracle-mark:before{left:8%}.card-oracle-mark:after{right:8%;transform:scaleX(-1)}
+.prophecy-card.first-place .card-result{background:linear-gradient(180deg,transparent,#11152a 22%,color-mix(in srgb,var(--candidate-color) 13%,#080d1b) 65%,#050914)}
+.crop-result-card{color:#eddaa5;background:radial-gradient(ellipse at 50% 78%,#713b5530,transparent 45%),linear-gradient(165deg,#10172b,#080d19)}
+.crop-result-card h4{color:#f2d99d;text-shadow:0 2px 3px #000}
+.crop-result-card>strong small{color:#c0aa77}
+
+/* Living card aura — soft, layered motion instead of rigid radial spokes. */
+.card-divine-rays{
+  inset:-90px;
+  border-radius:42%;
+  background:radial-gradient(ellipse at 28% 30%,color-mix(in srgb,var(--candidate-color) 62%,transparent),transparent 40%),radial-gradient(ellipse at 72% 68%,color-mix(in srgb,var(--candidate-color) 48%,#7352c4),transparent 44%),conic-gradient(from 25deg,transparent 0 12%,color-mix(in srgb,var(--candidate-color) 30%,transparent) 20%,transparent 31% 54%,color-mix(in srgb,var(--candidate-color) 24%,#f0c967) 64%,transparent 74%);
+  filter:blur(25px) saturate(1.25);
+  opacity:0;
+  transform:scale(.84) rotate(-8deg);
+  transition:opacity 1.2s ease;
+}
+.card-divine-rays:before,.card-divine-rays:after{
+  content:"";
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+}
+.card-divine-rays:before{
+  inset:14% 8%;
+  border:2px solid color-mix(in srgb,var(--candidate-color) 55%,#f3cf79);
+  box-shadow:0 0 22px color-mix(in srgb,var(--candidate-color) 45%,transparent),inset 0 0 28px color-mix(in srgb,var(--candidate-color) 26%,transparent);
+  opacity:.42;
+}
+.card-divine-rays:after{
+  inset:3%;
+  background:radial-gradient(circle at 18% 24%,#fff2b8 0 2px,transparent 3px),radial-gradient(circle at 82% 18%,color-mix(in srgb,var(--candidate-color) 55%,#fff) 0 2px,transparent 4px),radial-gradient(circle at 91% 69%,#f3ca69 0 1.5px,transparent 3px),radial-gradient(circle at 12% 78%,color-mix(in srgb,var(--candidate-color) 65%,#fff) 0 2px,transparent 4px);
+  filter:drop-shadow(0 0 7px #fff0ad);
+}
+.prophecy-card.revealed .card-divine-rays{
+  opacity:.38;
+  animation:livingAuraFlow 9s ease-in-out infinite alternate;
+}
+.prophecy-card.revealed .card-divine-rays:before{animation:auraHaloBreathe 4.8s ease-in-out infinite}
+.prophecy-card.revealed .card-divine-rays:after{animation:auraSparkOrbit 13s linear infinite}
+.prophecy-card.first-place.revealed .card-divine-rays{
+  opacity:.68;
+  animation:livingAuraFlow 6.5s ease-in-out infinite alternate;
+}
+.prophecy-card.first-place.revealed .card-divine-rays:before{opacity:.68;animation-duration:3.8s}
+@keyframes livingAuraFlow{
+  0%{transform:translate3d(-2%,1%,0) scale(.88) rotate(-9deg)}
+  45%{transform:translate3d(3%,-2%,0) scale(1.04) rotate(3deg)}
+  100%{transform:translate3d(-1%,3%,0) scale(.94) rotate(9deg)}
+}
+@keyframes auraHaloBreathe{50%{transform:scale(1.1);opacity:.78;box-shadow:0 0 42px color-mix(in srgb,var(--candidate-color) 58%,transparent),inset 0 0 45px color-mix(in srgb,var(--candidate-color) 32%,transparent)}}
+@keyframes auraSparkOrbit{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.prophecy-card.revealed .card-divine-rays,.prophecy-card.revealed .card-divine-rays:before,.prophecy-card.revealed .card-divine-rays:after{animation:none}}
+
+/* Election performance pass — preserve every effect while keeping continuous
+   motion on compositor-friendly transform/opacity properties. */
+.result-cinematic.is-finished,.result-cinematic.is-finished *{animation-play-state:paused!important}
+.result-cinematic.is-finished{pointer-events:none;content-visibility:hidden}
+#election.active .cosmos-nebula,
+#election.active .cosmos-stars,
+#election.active .cosmos-zodiac,
+#election.active .constellation-svg,
+#election.active .cosmos-moon,
+#election.active .cosmos-sun,
+#election.active .celestial-rays,
+#election.active .card-divine-rays,
+#election.active .card-divine-rays:before,
+#election.active .card-divine-rays:after,
+#election.active .speaker-oracle i,
+#election.active .map-stars{
+  backface-visibility:hidden;
+  transform-style:preserve-3d;
+}
+.results-dashboard,.overview-layout,.prophecy-stage,.room-summary,.room-map-host,.sacred-room-dashboard{contain:layout style paint}
+.card-divine-rays:before{box-shadow:0 0 34px color-mix(in srgb,var(--candidate-color) 50%,transparent),inset 0 0 38px color-mix(in srgb,var(--candidate-color) 30%,transparent)}
+@keyframes auraHaloBreathe{50%{transform:scale(1.1);opacity:.78}}
+.cosmos-moon{box-shadow:0 0 42px #b77cd077}
+@keyframes moonLevitate{50%{transform:translate3d(0,-30px,0) rotate(8deg);opacity:.9}}
+.cosmos-sun{filter:brightness(1.18)}
+@keyframes sunBreathe{50%{transform:translateZ(0) scale(1.13);opacity:.86}}
+.constellation-svg circle{transform-box:fill-box;transform-origin:center;filter:drop-shadow(0 0 5px #fff)}
+@keyframes constellationPulse{50%{transform:scale(1.35);opacity:.72}}
+.map-stars{letter-spacing:32px}
+@keyframes starScript{50%{opacity:.35;transform:scaleX(1.08)}}
+.results-universe .star-point.available{filter:brightness(1.08)}
+@keyframes gemPulse{50%{transform:scale(1.045);opacity:.88}}
+
+.winner-prophecy>span{
+  font-family:"Charm","Chonburi",serif;
+  font-size:23px;
+  font-weight:700;
+  letter-spacing:.06em;
+  color:#f1d083;
+  text-shadow:0 2px 0 #2b1908,0 0 14px #d9a44f66;
+}
+
+/* Larger celestial parliament with more space around the sacred ballot */
+.sacred-map-frame .parliament-map{height:680px}
+.seat-orbits{bottom:92px}
+.orbit-line-one{width:390px;height:390px}
+.orbit-line-two{width:510px;height:510px}
+.orbit-line-three{width:630px;height:630px}
+.parliament-seat{width:22px;height:22px;left:-11px;top:-11px}
+.speaker-oracle{bottom:9px}
+.floor-sigil{bottom:205px;font-size:185px}
+.chamber-zodiac-ring{bottom:-255px;width:810px;height:810px}
+@media(max-width:800px){.sacred-map-frame .parliament-map{height:540px}.seat-orbits{bottom:58px;transform:scale(.72)}.speaker-oracle{bottom:7px}.chamber-zodiac-ring{width:690px;height:690px;bottom:-230px}}
+
+/* Extra-wide grand celestial chamber */
+.results-dashboard .result-panel{max-width:1720px}
+.sacred-map-frame{margin-left:18px;margin-right:18px;padding:12px;border-radius:360px 360px 18px 18px}
+.sacred-map-frame .parliament-map{height:820px;border-radius:345px 345px 9px 9px}
+.seat-orbits{bottom:105px}
+.orbit-line-one{width:500px;height:500px}
+.orbit-line-two{width:650px;height:650px}
+.orbit-line-three{width:800px;height:800px}
+.chamber-zodiac-ring{width:1000px;height:1000px;bottom:-330px}
+.floor-sigil{bottom:260px;font-size:220px}
+.speaker-oracle{bottom:10px}
+@media(max-width:900px){.sacred-map-frame{margin-left:5px;margin-right:5px;padding:7px}.sacred-map-frame .parliament-map{height:570px}.seat-orbits{bottom:55px;transform:scale(.57)}.chamber-zodiac-ring{width:760px;height:760px;bottom:-270px}.floor-sigil{bottom:175px;font-size:150px}}
+
+/* Living constellation sky shared by every election step */
+body.election-mode:before{background:#020713}
+body.election-mode #election{position:relative;isolation:isolate;background:#020713}
+body.election-mode #election>.title,body.election-mode #electionContent{position:relative;z-index:2}
+.living-cosmos{position:absolute;z-index:0;inset:0;min-height:100vh;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at 50% 18%,#31204b 0,transparent 34%),radial-gradient(ellipse at 15% 65%,#17386466 0,transparent 38%),radial-gradient(ellipse at 88% 72%,#552d5d52 0,transparent 36%),linear-gradient(180deg,#020612,#071329 52%,#030817)}
+.cosmos-nebula{position:absolute;inset:-20%;background:radial-gradient(ellipse at 28% 36%,#72448645,transparent 24%),radial-gradient(ellipse at 68% 62%,#244f8145,transparent 28%),radial-gradient(ellipse at 52% 15%,#b07b3c24,transparent 20%);filter:blur(35px);animation:nebulaDrift 24s ease-in-out infinite alternate}
+.cosmos-stars{position:absolute;inset:-10%;transform-origin:center;background-repeat:repeat}.stars-far{opacity:.65;background-image:radial-gradient(circle,#fff3bd 0 1px,transparent 1.8px),radial-gradient(circle,#9b75d4 0 1px,transparent 1.8px),radial-gradient(circle,#e4b45c 0 1.2px,transparent 2px);background-size:117px 113px,173px 167px,241px 229px;background-position:13px 9px,77px 41px,121px 89px;animation:farStars 80s linear infinite}.stars-near{z-index:2;opacity:.9;background-image:radial-gradient(circle,#fff9dc 0 1.5px,transparent 2.5px),radial-gradient(circle,#d7a452 0 2px,transparent 3px),radial-gradient(circle,#b783dc 0 1.5px,transparent 2.5px);background-size:263px 251px,347px 331px,419px 397px;background-position:39px 17px,150px 98px,231px 53px;animation:nearStars 45s linear infinite}.cosmos-zodiac{position:absolute;left:50%;display:flex;align-items:flex-start;justify-content:center;border:1px solid #9d7138;border-radius:50%;color:#c29449;word-spacing:18px;text-align:center;font-family:Georgia,serif;box-shadow:0 0 0 22px #ad7b2b0a,0 0 0 23px #5d4327;opacity:.32}.zodiac-one{top:120px;width:1050px;height:1050px;padding-top:22px;font-size:25px;transform:translateX(-50%);animation:zodiacSkyOne 95s linear infinite}.zodiac-one:before,.zodiac-one:after{content:"";position:absolute;border-radius:50%}.zodiac-one:before{inset:8%;border:1px dashed #8d6736}.zodiac-one:after{inset:18%;border:1px solid #6e512f}.zodiac-two{top:1050px;width:820px;height:820px;padding-top:18px;font-size:21px;transform:translateX(-50%);animation:zodiacSkyTwo 75s linear infinite reverse}.zodiac-two:after{content:"";position:absolute;inset:12%;border:1px dashed #8a6333;border-radius:50%}.constellation-svg{position:absolute;width:min(480px,38vw);overflow:visible;opacity:.52;filter:drop-shadow(0 0 6px #d9b269)}.constellation-svg g{transform-origin:center}.constellation-svg path{fill:none;stroke:#b88a45;stroke-width:1;stroke-dasharray:5 6;animation:constellationDraw 7s ease-in-out infinite}.constellation-svg circle{fill:#fff2ae;stroke:#d1a04d;stroke-width:2;animation:constellationPulse 3s ease-in-out infinite}.constellation-left{left:-5%;top:430px;animation:constellationFloat 18s ease-in-out infinite}.constellation-right{right:-5%;top:1120px;animation:constellationFloat 21s -7s ease-in-out infinite reverse}.cosmos-moon,.cosmos-sun{position:absolute;display:grid;place-items:center;border:1px solid #b98843;border-radius:50%;color:#ebc56e;background:radial-gradient(circle,#65487555,#071027 65%);box-shadow:0 0 30px #aa73c477}.cosmos-moon{right:8%;top:470px;width:100px;height:100px;font-size:58px;animation:moonLevitate 9s ease-in-out infinite}.cosmos-sun{left:7%;top:1500px;width:130px;height:130px;font-size:72px;text-shadow:0 0 12px white,0 0 35px #dfa84e;animation:sunBreathe 5s ease-in-out infinite}
+/* Replace the old dotted bands with transparent celestial stages */
+body.election-mode #election>.title{background:linear-gradient(180deg,#030917d9,#071126b0);border-bottom:1px solid #9f733a;box-shadow:0 20px 55px #0004}
+body.election-mode #election>.title:before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 12%,#b97fcd0c 12.2% 12.5%,transparent 12.7% 42%,#d5a24c0d 42.2% 42.5%,transparent 42.7%);animation:titleRays 12s ease-in-out infinite;pointer-events:none}
+body.election-mode .election-register{background:#060d1dd9;backdrop-filter:blur(8px)}
+body.election-mode .register-visual{background:radial-gradient(circle at 74% 25%,#9d6bb454,transparent 24%),radial-gradient(circle at 30% 60%,#d6a14b30,transparent 28%),linear-gradient(145deg,#050a17e8,#12172de8)}
+body.election-mode .candidate-showcase{background:radial-gradient(circle at 50% 32%,#8d5aa04a,transparent 25%),linear-gradient(180deg,#030817d9,#0b1428e8 70%,#030817e8)}
+body.election-mode .candidate-showcase:before{background:repeating-conic-gradient(from 0deg at 50% 60%,#d6aa5318 0 .35deg,transparent .5deg 15deg);animation:cardTempleRays 65s linear infinite}
+body.election-mode .ballot-room{background:radial-gradient(circle at 50% 42%,#7547853d,transparent 30%),linear-gradient(180deg,#030817d9,#071329eb)}
+body.election-mode .result-wait{background:radial-gradient(circle at 50% 30%,#8c579d4d,transparent 27%),linear-gradient(#030817d0,#071126e8)}
+body.election-mode .results-universe{background:radial-gradient(circle at 50% 34%,#6f427d42,transparent 26%),radial-gradient(ellipse at 20% 75%,#173c6960,transparent 36%),linear-gradient(180deg,#020713da,#071329ed 55%,#020713ed);background-size:auto;background-attachment:scroll}
+body.election-mode .results-universe:before{background:linear-gradient(90deg,#c59543 0 20%,transparent 20% 80%,#c59543 80%) top/100% 1px no-repeat,linear-gradient(90deg,#c59543 0 20%,transparent 20% 80%,#c59543 80%) bottom/100% 1px no-repeat,linear-gradient(#c59543 0 20%,transparent 20% 80%,#c59543 80%) left/1px 100% no-repeat,linear-gradient(#c59543 0 20%,transparent 20% 80%,#c59543 80%) right/1px 100% no-repeat}
+.prophecy-stage{background:radial-gradient(circle at 50% 52%,#78488642,transparent 25%),repeating-conic-gradient(from 0deg,#d5aa5615 0 .5deg,transparent .8deg 15deg),#071126d9;backdrop-filter:blur(5px)}.room-summary,.room-map-host,.chamber-title{backdrop-filter:blur(6px)}
+@keyframes nebulaDrift{0%{transform:translate3d(-3%,-2%,0) scale(1)}100%{transform:translate3d(4%,3%,0) scale(1.12)}}@keyframes farStars{to{transform:translate3d(-60px,90px,0)}}@keyframes nearStars{to{transform:translate3d(80px,130px,0) scale(1.04)}}@keyframes zodiacSkyOne{to{transform:translateX(-50%) rotate(360deg)}}@keyframes zodiacSkyTwo{to{transform:translateX(-50%) rotate(360deg)}}@keyframes constellationDraw{0%,100%{stroke-dashoffset:0;opacity:.4}50%{stroke-dashoffset:60;opacity:1}}@keyframes constellationPulse{50%{r:9px;fill:#fff;filter:drop-shadow(0 0 7px #fff)}}@keyframes constellationFloat{50%{transform:translate3d(30px,-25px,0) rotate(3deg)}}@keyframes moonLevitate{50%{transform:translateY(-30px) rotate(8deg);box-shadow:0 0 55px #bd82d9}}@keyframes sunBreathe{50%{transform:scale(1.13);filter:brightness(1.4)}}@keyframes titleRays{50%{opacity:.35;transform:translateX(3%)}}@keyframes cardTempleRays{to{transform:rotate(360deg)}}
+@media(max-width:760px){.cosmos-zodiac{opacity:.2}.zodiac-one{width:720px;height:720px}.constellation-svg{width:65vw;opacity:.32}.cosmos-moon{right:-20px;width:75px;height:75px;font-size:42px}.cosmos-nebula{filter:blur(22px)}}
+.candidate-showcase .candidate-hero{border-color:color-mix(in srgb,var(--candidate-color) 55%,#e4c778);box-shadow:0 24px 55px #0008,0 0 32px color-mix(in srgb,var(--candidate-color) 45%,transparent)}
+.candidate-showcase .candidate-hero:after{content:"";position:absolute;z-index:-1;inset:-35px;background:radial-gradient(ellipse at 50% 40%,color-mix(in srgb,var(--candidate-color) 30%,transparent),transparent 68%);animation:candidateAura 4s calc(var(--candidate-index)*-.8s) ease-in-out infinite}.candidate-showcase .candidate-copy small{color:color-mix(in srgb,var(--candidate-color) 52%,#ffe6a0)}
+@keyframes candidateAura{50%{opacity:.4;transform:scale(1.08)}}
+
+/* Sacred typography for registration, system notices, and thank-you state */
+body.election-mode .election-notice h3{
+  font-family:"Chonburi","Charm",serif;
+  font-size:clamp(31px,4.5vw,53px);
+  font-weight:400;
+  line-height:1.35;
+  color:#ffe09a;
+  text-shadow:0 3px 0 #2b1908,0 0 18px #d9a44f55;
+}
+body.election-mode .election-notice p{
+  font-family:"Charm",Kanit,serif;
+  font-size:23px;
+  font-weight:700;
+  line-height:1.6;
+  color:#dbc594;
+}
+body.election-mode .election-notice small{
+  font-family:"Cinzel Decorative",serif;
+  font-weight:700;
+  letter-spacing:4px;
+  color:#e9b956;
+}
+body.election-mode .election-notice>span{font-family:"Charm",Kanit,serif;font-size:17px;color:#a99a77}
+body.election-mode .register-orbit b{
+  font-family:"Chonburi",serif;
+  font-size:30px;
+  font-weight:400;
+  line-height:1.45;
+  color:#fff0b6;
+  text-shadow:0 3px 0 #2b1908,0 0 18px #e4b65d66;
+}
+body.election-mode .register-visual h3{
+  font-family:"Chonburi","Charm",serif;
+  font-size:clamp(37px,4vw,52px);
+  font-weight:400;
+  line-height:1.35;
+  color:#fff0b5;
+  text-shadow:0 4px 0 #291707,0 0 22px #d5a04f55;
+}
+body.election-mode .register-visual h3 em{
+  display:inline-block;
+  font-family:"Charm",serif;
+  font-size:1.16em;
+  font-weight:700;
+  color:#ffd04f;
+  text-shadow:0 3px 0 #402507,0 0 18px #f0b93266;
+}
+body.election-mode .register-visual p{font-family:"Charm",Kanit,serif;font-size:21px;font-weight:700;line-height:1.6;color:#d8c69b}
+body.election-mode .register-kicker{font-family:"Cinzel Decorative",serif;font-weight:700;letter-spacing:5px;color:#edbd5e}
+body.election-mode .election-login h3{
+  font-family:"Chonburi","Charm",serif;
+  font-size:35px;
+  font-weight:400;
+  line-height:1.4;
+  color:#ffe09a;
+  text-shadow:0 3px 0 #2b1908,0 0 16px #d6a34f55;
+}
+body.election-mode .election-login>p{font-family:"Charm",Kanit,serif;font-size:21px;font-weight:700;line-height:1.6;color:#d6c295}
+body.election-mode .step-chip{font-family:"Charm",Kanit,serif;font-size:16px;font-weight:700}
+body.election-mode .result-wait .big{
+  font-family:"Chonburi","Charm",serif;
+  font-size:clamp(48px,7vw,85px);
+  font-weight:400;
+  line-height:1.25;
+  color:#ffe19a;
+  text-shadow:0 4px 0 #2b1908,0 0 25px #dfa74f66;
+}
+body.election-mode .result-wait>p{font-family:"Charm",Kanit,serif;font-size:24px;font-weight:700;line-height:1.7;color:#dec895}
+body.election-mode .result-wait .section-label{font-family:"Cinzel Decorative",serif;font-size:14px;font-weight:700;letter-spacing:4px;color:#e3b456}
+body.election-mode .countdown-card>b{font-family:"Chonburi","Charm",serif;font-size:23px;font-weight:400;color:#ffe19a;text-shadow:0 2px 0 #251606}
+body.election-mode .countdown-card>small{font-family:"Cinzel Decorative",serif;font-weight:700;letter-spacing:4px}
+body.election-mode .countdown-card #countText{font-family:"Charm",Kanit,serif;font-size:21px;font-weight:700;color:#f0deb0}
+body.election-mode .countdown-card time{font-family:"Cinzel Decorative",Kanit,serif;font-weight:700;color:#e4bb65}
+@media(max-width:650px){body.election-mode .election-notice p,body.election-mode .register-visual p,body.election-mode .election-login>p{font-size:18px}body.election-mode .election-login h3{font-size:29px}body.election-mode .result-wait>p{font-size:20px}}
+
+/* Sacred fold-and-cast ballot ceremony */
+.ballot-casting-ceremony{position:relative;min-height:850px;margin:0 calc(50% - 50vw);padding:45px 20px 80px;overflow:hidden;color:#ead7a7;background:radial-gradient(circle at 50% 54%,#77458a52,transparent 24%),linear-gradient(180deg,#020713d9,#07142bea);perspective:1400px}.casting-cosmos{position:absolute;inset:0;pointer-events:none}.casting-cosmos:before{content:"";position:absolute;inset:-30%;background:repeating-conic-gradient(from 0deg at 50% 60%,#d8ad5b17 0 .45deg,transparent .7deg 15deg);animation:slowSpin 55s linear infinite}.casting-cosmos i{position:absolute;left:50%;top:55%;border:1px solid #8d6735;border-radius:50%;transform:translate(-50%,-50%)}.casting-cosmos i:nth-child(1){width:700px;height:700px}.casting-cosmos i:nth-child(2){width:520px;height:520px;border-style:dashed;animation:slowSpin 25s linear infinite}.casting-cosmos i:nth-child(3){width:340px;height:340px;box-shadow:0 0 55px #a56ac35c}.casting-title{position:relative;z-index:3;text-align:center}.casting-title small{font:700 12px "Cinzel Decorative",serif;letter-spacing:5px;color:#d9a94f}.casting-title h3{margin:8px 0;font:400 clamp(31px,4vw,50px) "Chonburi",serif;color:#ffe09a;text-shadow:0 3px 0 #2b1908,0 0 22px #d7a55055}.casting-title p{margin:0;font:700 19px "Charm",serif;color:#bcae89}.casting-stage{position:relative;z-index:2;width:min(750px,100%);height:630px;margin:5px auto 0}.casting-ballot-wrap{position:absolute;z-index:5;left:50%;top:35px;width:360px;height:245px;transform:translateX(-50%);animation:castBallot 4.4s cubic-bezier(.45,.05,.3,1) forwards}.casting-ballot{position:absolute;inset:0;transform-style:preserve-3d;animation:compressBallot 4.4s ease forwards}.casting-ballot-face{position:absolute;inset:0;padding:17px;border:2px solid #342d1c;color:#282112;background:#f8efd8;box-shadow:0 16px 35px #0009,inset 0 0 0 6px #f8efd8,inset 0 0 0 7px #937035}.casting-ballot-face header{display:flex;align-items:center;justify-content:space-between;padding-bottom:11px;border-bottom:2px double #544627}.casting-ballot-face header span{color:#a87924}.casting-choice{display:grid;grid-template-columns:65px 1fr;align-items:center;gap:14px;margin-top:20px;padding:15px;border:1px solid #9f8750}.casting-choice>i{width:48px;height:48px;display:grid;place-items:center;border:2px solid #332b1b;color:#254999;font:48px Arial;font-style:normal;line-height:1}.casting-choice small,.casting-choice b{display:block}.casting-choice small{color:#786741}.casting-choice b{font-size:18px}.casting-ballot-face footer{margin-top:15px;text-align:center;color:#806c3b;font:14px "Charm",serif}.fold-crease{position:absolute;z-index:4;opacity:0;background:#8f773d}.crease-h{left:0;right:0;top:50%;height:1px}.crease-v{top:0;bottom:0;left:50%;width:1px}.fold-panel{position:absolute;z-index:6;pointer-events:none;backface-visibility:hidden;background:linear-gradient(#fff8e7,#e9d8ac)}.fold-top{left:0;right:0;top:0;height:50%;border:2px solid #5f5131;border-bottom:0;transform-origin:bottom;opacity:0;animation:foldTop 4.4s ease forwards}.fold-left{left:0;top:0;bottom:0;width:50%;border:2px solid #5f5131;border-right:0;transform-origin:right;opacity:0;animation:foldLeft 4.4s ease forwards}.sacred-ballot-box{position:absolute;z-index:3;left:50%;bottom:5px;width:390px;height:265px;transform:translateX(-50%)}.box-aura{position:absolute;inset:-80px;background:radial-gradient(circle,#b978d548,transparent 64%);opacity:0;animation:boxAwaken 4.4s ease forwards}.ballot-slot{position:absolute;z-index:5;left:50%;top:-13px;width:230px;height:32px;transform:translateX(-50%);border:3px solid #e3ba66;border-radius:50%;background:#030611;box-shadow:0 0 0 7px #081027,0 0 0 8px #8e6736,0 0 25px #9d68b8}.ballot-slot i{position:absolute;inset:8px 25px;border-radius:50%;background:#000;box-shadow:inset 0 0 10px #ae7bd0}.box-face{position:absolute;inset:12px 0 0;display:flex;align-items:center;justify-content:center;flex-direction:column;border:3px solid #d6a954;border-radius:22px 22px 45px 45px;background:radial-gradient(circle at 50% 15%,#73478188,transparent 28%),linear-gradient(145deg,#11172c,#050a17);box-shadow:inset 0 0 0 7px #071027,inset 0 0 0 8px #805c31,0 25px 50px #000b}.box-face:before,.box-face:after{content:"✦ ☾ ✦";position:absolute;color:#9d773e;letter-spacing:12px}.box-face:before{top:25px}.box-face:after{bottom:22px;transform:rotate(180deg)}.box-face>span{font-size:63px;color:#ffe6a0;text-shadow:0 0 14px white,0 0 35px #ad75ca}.box-face>b{font:400 23px "Chonburi",serif;color:#edd084}.box-face>small{font:9px "Cinzel Decorative",serif;letter-spacing:2px;color:#9c8a66}.cast-confirmation{position:absolute;z-index:8;left:50%;bottom:95px;display:flex;align-items:center;gap:10px;padding:11px 18px;border:1px solid #d6ab56;border-radius:30px;color:#ffe4a0;background:#071027e8;box-shadow:0 0 30px #b677cb80;opacity:0;transform:translateX(-50%) scale(.6);animation:castConfirmed 4.4s ease forwards;white-space:nowrap}.cast-confirmation span{font-size:25px;text-shadow:0 0 12px white}.cast-confirmation b{font-family:"Charm",serif;font-size:18px}
+@keyframes foldTop{0%,13%{opacity:0;transform:rotateX(0)}14%{opacity:1}34%,100%{opacity:1;transform:rotateX(-180deg)}}@keyframes foldLeft{0%,35%{opacity:0;transform:rotateY(0)}36%{opacity:1}56%,100%{opacity:1;transform:rotateY(180deg)}}@keyframes compressBallot{0%,34%{transform:scale(1)}35%,55%{transform:scaleY(.52)}56%,100%{transform:scale(.5,.52)}}@keyframes castBallot{0%,56%{top:35px;transform:translateX(-50%) rotate(0);opacity:1}72%{top:245px;transform:translateX(-50%) rotate(2deg);opacity:1}84%,100%{top:405px;transform:translateX(-50%) scale(.42) rotate(-3deg);opacity:0}}@keyframes boxAwaken{0%,67%{opacity:0;transform:scale(.7)}78%{opacity:1;transform:scale(1.2)}100%{opacity:.6;transform:scale(1)}}@keyframes castConfirmed{0%,82%{opacity:0;transform:translateX(-50%) scale(.6)}92%,100%{opacity:1;transform:translateX(-50%) scale(1)}}
+@media(max-width:600px){.ballot-casting-ceremony{min-height:760px}.casting-stage{height:560px}.casting-ballot-wrap{width:285px;height:205px}.casting-ballot-face{padding:11px}.casting-choice{grid-template-columns:50px 1fr;margin-top:12px;padding:10px}.casting-choice>i{width:38px;height:38px;font-size:38px}.sacred-ballot-box{width:300px;height:225px}.ballot-slot{width:190px}.box-face>span{font-size:50px}.casting-cosmos i:nth-child(1){width:520px;height:520px}.casting-cosmos i:nth-child(2){width:390px;height:390px}}
+
+
