@@ -17,6 +17,16 @@ const isFirebaseSharedKey = (key) => FIREBASE_SHARED_KEYS.has(String(key)) || St
 const firebaseKey = (key) => encodeURIComponent(String(key));
 let firebaseReady = false;
 let firebaseApplyingRemote = false;
+let firebaseConnectionState = 'กำลังเตรียมการเชื่อมต่อ Firebase';
+const firebasePendingWrites = new Map();
+function setFirebaseConnectionState(state, error = '') {
+  firebaseConnectionState = state;
+  document.documentElement.dataset.firebaseState = state === 'เชื่อมต่อแล้ว' ? 'connected' : 'error';
+  console[state === 'เชื่อมต่อแล้ว' ? 'info' : 'warn'](`[Firebase] ${state}`, error);
+}
+function firebaseConfigured(config) {
+  return Boolean(config && config.apiKey && config.databaseURL && config.projectId) && !Object.values(config).some((value) => String(value).includes('PASTE_YOUR_'));
+}
 function refreshRemoteViews() {
   const active = document.querySelector('.page.active')?.id;
   if (active === 'members') void renderCommitteeMembers(true);
@@ -28,31 +38,34 @@ function refreshRemoteViews() {
 }
 async function startFirebaseSync() {
   const config = window.FIREBASE_CONFIG;
-  if (!window.firebase || !config || !config.apiKey || config.apiKey.startsWith('PASTE_')) {
-    console.warn('Firebase is not configured. Add your Firebase Web app config to firebase-config.js.');
+  if (!window.firebase || !firebaseConfigured(config)) {
+    setFirebaseConnectionState('ยังไม่ได้ตั้งค่า Firebase', 'Add the real Web app configuration to firebase-config.js before deploying.');
     return;
   }
   try {
     if (!firebase.apps.length) firebase.initializeApp(config);
-    // Anonymous Auth lets Firebase rules reject unauthenticated requests without
-    // exposing any password or service-account secret in this static website.
-    await firebase.auth().signInAnonymously();
     const root = firebase.database().ref(`sites/${window.FIREBASE_SITE_ID || 'phanuang'}/state`);
     const nativeSet = Storage.prototype.setItem;
     const nativeRemove = Storage.prototype.removeItem;
+    const write = (key, value) => root.child(firebaseKey(key)).set({ value: String(value), updatedAt: firebase.database.ServerValue.TIMESTAMP })
+      .catch((error) => { firebasePendingWrites.set(key, { type: 'set', value: String(value) }); setFirebaseConnectionState('บันทึก Firebase ไม่สำเร็จ', error); });
+    const remove = (key) => root.child(firebaseKey(key)).remove()
+      .catch((error) => { firebasePendingWrites.set(key, { type: 'remove' }); setFirebaseConnectionState('ลบข้อมูล Firebase ไม่สำเร็จ', error); });
     Storage.prototype.setItem = function(key, value) {
       nativeSet.call(this, key, value);
-      if (this === localStorage && firebaseReady && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
-        root.child(firebaseKey(key)).set({ value: String(value), updatedAt: firebase.database.ServerValue.TIMESTAMP })
-          .catch((error) => console.error('Firebase save failed:', error));
+      if (this === localStorage && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
+        if (firebaseReady) write(key, value); else firebasePendingWrites.set(String(key), { type: 'set', value: String(value) });
       }
     };
     Storage.prototype.removeItem = function(key) {
       nativeRemove.call(this, key);
-      if (this === localStorage && firebaseReady && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
-        root.child(firebaseKey(key)).remove().catch((error) => console.error('Firebase delete failed:', error));
+      if (this === localStorage && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
+        if (firebaseReady) remove(key); else firebasePendingWrites.set(String(key), { type: 'remove' });
       }
     };
+    // Anonymous Auth lets Firebase rules reject unauthenticated requests without
+    // exposing any password or service-account secret in this static website.
+    await firebase.auth().signInAnonymously();
     let firstSnapshot = true;
     let previousCloudKeys = new Set();
     root.on('value', (snapshot) => {
@@ -76,10 +89,13 @@ async function startFirebaseSync() {
       previousCloudKeys = currentCloudKeys;
       firstSnapshot = false;
       firebaseReady = true;
+      firebasePendingWrites.forEach((operation, key) => operation.type === 'remove' ? remove(key) : write(key, operation.value));
+      firebasePendingWrites.clear();
+      setFirebaseConnectionState('เชื่อมต่อแล้ว');
       window.dispatchEvent(new Event('phanuang-firebase-sync'));
       window.setTimeout(refreshRemoteViews, 0);
-    }, (error) => console.error('Firebase realtime connection failed:', error));
-  } catch (error) { console.error('Firebase initialization failed:', error); }
+    }, (error) => setFirebaseConnectionState('เชื่อมต่อ Firebase ไม่สำเร็จ', error));
+  } catch (error) { setFirebaseConnectionState('เชื่อมต่อ Firebase ไม่สำเร็จ', error); }
 }
 startFirebaseSync();
 
