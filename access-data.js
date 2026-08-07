@@ -45,7 +45,7 @@ window.PHANUANG_ACCESS_ACCOUNTS = [
   {username:'69111',passwords:['5111'],name:'สิริมาส ทองมาดี',room:'5/11',role:'teacher',teams:['ครูที่ปรึกษา']},
   {username:'69112',passwords:['5112'],name:'โยทนัท สงวนโฉม',room:'5/11',role:'teacher',teams:['ครูที่ปรึกษา']},
   {username:'69431',passwords:['4301'],name:'อรุณศรี ศรีชัย',room:'4/3',role:'teacher',teams:['ครูที่ปรึกษา']},
-  {username:'69431',passwords:['4302'],name:'พลกฤษณ์ เข็มเพ็ชร',room:'4/3',role:'teacher',teams:['ครูที่ปรึกษา']},
+  {username:'69432',passwords:['4302'],name:'พลกฤษณ์ เข็มเพ็ชร',room:'4/3',role:'teacher',teams:['ครูที่ปรึกษา']},
   {username:'69421',passwords:['4201'],name:'ฆ้องชัย คงดี',room:'4/2',role:'teacher',teams:['ครูที่ปรึกษา']},
   {username:'69422',passwords:['4202'],name:'วรรณวิภา สุรเมธสกุล',room:'4/2',role:'teacher',teams:['ครูที่ปรึกษา']},
   {username:'69381',passwords:['3801'],name:'ธารญา ธยาน์ธนาธร',room:'3/8',role:'teacher',teams:['ครูที่ปรึกษา']},
