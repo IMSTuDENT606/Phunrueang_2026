@@ -3,6 +3,86 @@ const pages = ['home', 'members', 'room-login', 'classroom-113', 'classroom-13',
 let selectedCandidate = null;
 let classroomAnimationObserver = null;
 
+/* Firebase Realtime Database bridge -------------------------------------------------
+ * Existing UI code can keep using localStorage synchronously, while every shared key
+ * is mirrored to Firebase and changes made by another device update this local cache.
+ */
+const FIREBASE_SHARED_KEYS = new Set([
+  'phanuang-committee-members', 'phanuang-election-config', 'phanuang-election-votes',
+  'phanuang-store-products', 'phanuang-store-lookbook-config', 'phanuang-orders',
+  'phanuang-gallery', 'phanuang-attendance-sessions', 'phanuang-attendance-records',
+  'phanuang-attendance-config', 'phanuang-sports-results-v1'
+]);
+const isFirebaseSharedKey = (key) => FIREBASE_SHARED_KEYS.has(String(key)) || String(key).startsWith('phanuang-store-media-');
+const firebaseKey = (key) => encodeURIComponent(String(key));
+let firebaseReady = false;
+let firebaseApplyingRemote = false;
+function refreshRemoteViews() {
+  const active = document.querySelector('.page.active')?.id;
+  if (active === 'members') void renderCommitteeMembers(true);
+  if (active === 'election') renderElection();
+  if (active === 'shop') void renderShop();
+  if (active === 'gallery') renderGalleryPage();
+  if (active === 'sports') renderSportsPage();
+  if (active === 'admin') renderAdmin();
+}
+async function startFirebaseSync() {
+  const config = window.FIREBASE_CONFIG;
+  if (!window.firebase || !config || !config.apiKey || config.apiKey.startsWith('PASTE_')) {
+    console.warn('Firebase is not configured. Add your Firebase Web app config to firebase-config.js.');
+    return;
+  }
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    // Anonymous Auth lets Firebase rules reject unauthenticated requests without
+    // exposing any password or service-account secret in this static website.
+    await firebase.auth().signInAnonymously();
+    const root = firebase.database().ref(`sites/${window.FIREBASE_SITE_ID || 'phanuang'}/state`);
+    const nativeSet = Storage.prototype.setItem;
+    const nativeRemove = Storage.prototype.removeItem;
+    Storage.prototype.setItem = function(key, value) {
+      nativeSet.call(this, key, value);
+      if (this === localStorage && firebaseReady && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
+        root.child(firebaseKey(key)).set({ value: String(value), updatedAt: firebase.database.ServerValue.TIMESTAMP })
+          .catch((error) => console.error('Firebase save failed:', error));
+      }
+    };
+    Storage.prototype.removeItem = function(key) {
+      nativeRemove.call(this, key);
+      if (this === localStorage && firebaseReady && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
+        root.child(firebaseKey(key)).remove().catch((error) => console.error('Firebase delete failed:', error));
+      }
+    };
+    let firstSnapshot = true;
+    let previousCloudKeys = new Set();
+    root.on('value', (snapshot) => {
+      const cloud = snapshot.val() || {};
+      const currentCloudKeys = new Set(Object.keys(cloud).map(decodeURIComponent));
+      firebaseApplyingRemote = true;
+      previousCloudKeys.forEach((key) => { if (!currentCloudKeys.has(key)) nativeRemove.call(localStorage, key); });
+      Object.entries(cloud).forEach(([encodedKey, record]) => {
+        const key = decodeURIComponent(encodedKey);
+        if (record && typeof record.value === 'string') nativeSet.call(localStorage, key, record.value);
+      });
+      firebaseApplyingRemote = false;
+      if (firstSnapshot && !snapshot.exists()) {
+        // One-time migration of existing browser data. It never runs again after data exists.
+        firebaseApplyingRemote = false;
+        Object.keys(localStorage).filter(isFirebaseSharedKey).forEach((key) => {
+          const value = localStorage.getItem(key);
+          if (value !== null) root.child(firebaseKey(key)).set({ value, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+        });
+      }
+      previousCloudKeys = currentCloudKeys;
+      firstSnapshot = false;
+      firebaseReady = true;
+      window.dispatchEvent(new Event('phanuang-firebase-sync'));
+      window.setTimeout(refreshRemoteViews, 0);
+    }, (error) => console.error('Firebase realtime connection failed:', error));
+  } catch (error) { console.error('Firebase initialization failed:', error); }
+}
+startFirebaseSync();
+
 // One themed dialog system replaces browser alerts/confirms across every module.
 let themedDialogReplay = false;
 function currentDialogTheme(trigger) {
@@ -501,7 +581,7 @@ const MEMBER_ROLES = ['ประธานสี','รองประธานส
 function openCommitteeDatabase() { return new Promise((resolve, reject) => { const request = indexedDB.open(COMMITTEE_DB, 1); request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains(COMMITTEE_STORE)) request.result.createObjectStore(COMMITTEE_STORE); }; request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
 async function readCommitteeDatabase() { const database = await openCommitteeDatabase(); return new Promise((resolve, reject) => { const transaction = database.transaction(COMMITTEE_STORE, 'readonly'); const request = transaction.objectStore(COMMITTEE_STORE).get('members'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); transaction.oncomplete = () => database.close(); }); }
 async function setCommitteeMembers(members) { const database = await openCommitteeDatabase(); await new Promise((resolve, reject) => { const transaction = database.transaction(COMMITTEE_STORE, 'readwrite'); transaction.objectStore(COMMITTEE_STORE).put(members, 'members'); transaction.oncomplete = resolve; transaction.onerror = () => reject(transaction.error); transaction.onabort = () => reject(transaction.error); }); database.close(); }
-async function getCommitteeMembers() { try { const saved = await readCommitteeDatabase(); if (Array.isArray(saved)) return saved; const legacy = JSON.parse(localStorage.getItem(COMMITTEE_KEY) || '[]'); if (legacy.length) { await setCommitteeMembers(legacy); localStorage.removeItem(COMMITTEE_KEY); } return legacy; } catch (_) { try { return JSON.parse(localStorage.getItem(COMMITTEE_KEY) || '[]'); } catch (_) { return []; } } }
+async function getCommitteeMembers() { try { const shared = JSON.parse(localStorage.getItem(COMMITTEE_KEY) || 'null'); if (Array.isArray(shared)) return shared; const saved = await readCommitteeDatabase(); if (Array.isArray(saved) && saved.length) { localStorage.setItem(COMMITTEE_KEY, JSON.stringify(saved)); return saved; } return []; } catch (_) { return []; } }
 function escapeAttribute(value = '') { return escapeHTML(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 const MEMBER_CONTACTS = [
   { key:'instagram', label:'Instagram', icon:'◎', hint:'ชื่อผู้ใช้หรือ URL', base:'https://instagram.com/' },
@@ -1412,8 +1492,8 @@ const STORE_MEDIA_DB = 'phanuang-store-media-db';
 const STORE_MEDIA_TABLE = 'product-media';
 let storeProductsRuntime = [];
 function openStoreMediaDatabase(){return new Promise((resolve,reject)=>{const request=indexedDB.open(STORE_MEDIA_DB,1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(STORE_MEDIA_TABLE))request.result.createObjectStore(STORE_MEDIA_TABLE);};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
-async function readStoreMedia(productId){const database=await openStoreMediaDatabase();return new Promise((resolve,reject)=>{const transaction=database.transaction(STORE_MEDIA_TABLE,'readonly'),request=transaction.objectStore(STORE_MEDIA_TABLE).get(productId);request.onsuccess=()=>resolve(request.result||{});request.onerror=()=>reject(request.error);transaction.oncomplete=()=>database.close();});}
-async function writeStoreMedia(productId,media){const database=await openStoreMediaDatabase();return new Promise((resolve,reject)=>{const transaction=database.transaction(STORE_MEDIA_TABLE,'readwrite');transaction.objectStore(STORE_MEDIA_TABLE).put(media,productId);transaction.oncomplete=()=>{database.close();resolve();};transaction.onerror=()=>reject(transaction.error);});}
+async function readStoreMedia(productId){try{const shared=JSON.parse(localStorage.getItem(`phanuang-store-media-${productId}`)||'null');if(shared)return shared;}catch(_){}const database=await openStoreMediaDatabase();return new Promise((resolve,reject)=>{const transaction=database.transaction(STORE_MEDIA_TABLE,'readonly'),request=transaction.objectStore(STORE_MEDIA_TABLE).get(productId);request.onsuccess=()=>resolve(request.result||{});request.onerror=()=>reject(request.error);transaction.oncomplete=()=>database.close();});}
+async function writeStoreMedia(productId,media){localStorage.setItem(`phanuang-store-media-${productId}`,JSON.stringify(media));const database=await openStoreMediaDatabase();return new Promise((resolve,reject)=>{const transaction=database.transaction(STORE_MEDIA_TABLE,'readwrite');transaction.objectStore(STORE_MEDIA_TABLE).put(media,productId);transaction.oncomplete=()=>{database.close();resolve();};transaction.onerror=()=>reject(transaction.error);});}
 async function hydrateStoreProducts(products){const hydrated=await Promise.all(products.map(async product=>({...product,...await readStoreMedia(product.id)})));storeProductsRuntime=hydrated;return hydrated;}
 const STORE_LOOKBOOK_KEY='phanuang-store-lookbook-config';
 async function getStoreLookbook(){let config={sourceProductId:'',finishProductId:'',tolerance:42};try{config={...config,...JSON.parse(localStorage.getItem(STORE_LOOKBOOK_KEY)||'{}')};}catch(_){}return {...config,...await readStoreMedia('__lookbook_model__')};}
@@ -1549,10 +1629,7 @@ const seatCodeSet = new Set(seatCodes);
 const ATTENDANCE_SESSIONS_KEY = 'phanuang-attendance-sessions';
 const ATTENDANCE_RECORDS_KEY = 'phanuang-attendance-records';
 const ATTENDANCE_RESET_VERSION = 'attendance-reset-unlimited-v1';
-if (localStorage.getItem('phanuang-attendance-reset-version') !== ATTENDANCE_RESET_VERSION) {
-  ['phanuang-attendance','phanuang-attendance-config',ATTENDANCE_SESSIONS_KEY,ATTENDANCE_RECORDS_KEY].forEach((key) => localStorage.removeItem(key));
-  localStorage.setItem('phanuang-attendance-reset-version', ATTENDANCE_RESET_VERSION);
-}
+if (localStorage.getItem('phanuang-attendance-reset-version') !== ATTENDANCE_RESET_VERSION) localStorage.setItem('phanuang-attendance-reset-version', ATTENDANCE_RESET_VERSION);
 let attendanceViewingSessionId = '';
 let attendanceCameraStream = null;
 let attendanceScanTimer = 0;
@@ -1700,7 +1777,7 @@ async function renderCommitteeAdmin(host) {
   const add = (type) => { syncFromRows(); const memberIndex = members.length; members.push({ type, name:'', nickname:'', role:type === 'teacher' ? 'ครูที่ปรึกษาคณะสี' : '', order:members.filter((m) => m.type === type).length + 1, image:'', contacts:{}, published:true }); $('#memberAdminSearch').value = ''; renderRows(); const added = list.querySelector(`[data-index="${memberIndex}"]`); added?.scrollIntoView({behavior:'smooth',block:'center'}); added?.querySelector('.member-name')?.focus({preventScroll:true}); };
   const bindAddButtons = () => { host.querySelectorAll('[data-add-member]').forEach((button) => { button.onclick = () => add(button.dataset.addMember); }); };
   $('#memberAdminSearch').addEventListener('input', () => { syncFromRows(); renderRows(); });
-  $('#saveCommitteeMembers').addEventListener('click', async () => { syncFromRows(); const button = $('#saveCommitteeMembers'); button.disabled = true; $('#memberSaveStatus').textContent = 'กำลังบันทึก…'; try { await setCommitteeMembers(members); localStorage.removeItem(COMMITTEE_KEY); renderCommitteeMembers(true); $('#memberSaveStatus').textContent = `บันทึกแล้ว ${members.length} การ์ด`; } catch (_) { $('#memberSaveStatus').textContent = 'บันทึกไม่สำเร็จ'; window.alert('ไม่สามารถบันทึกรูปภาพได้ กรุณาตรวจสอบพื้นที่ว่างของอุปกรณ์'); } finally { button.disabled = false; } });
+  $('#saveCommitteeMembers').addEventListener('click', async () => { syncFromRows(); const button = $('#saveCommitteeMembers'); button.disabled = true; $('#memberSaveStatus').textContent = 'กำลังบันทึก…'; try { await setCommitteeMembers(members); localStorage.setItem(COMMITTEE_KEY, JSON.stringify(members)); renderCommitteeMembers(true); $('#memberSaveStatus').textContent = `บันทึกแล้ว ${members.length} การ์ด`; } catch (_) { $('#memberSaveStatus').textContent = 'บันทึกไม่สำเร็จ'; window.alert('ไม่สามารถบันทึกรูปภาพได้ กรุณาตรวจสอบพื้นที่ว่างของอุปกรณ์'); } finally { button.disabled = false; } });
   renderRows();
 }
 function renderElectionAdmin(host) {

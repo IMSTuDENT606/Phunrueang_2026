@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "sites": {
+      "$site": {
+        "state": {
+          ".read": true,
+          ".write": "auth != null"
+        }
+      }
+    }
+  }
+}
