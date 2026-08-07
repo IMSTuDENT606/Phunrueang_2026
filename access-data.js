@@ -19,6 +19,7 @@ window.PHANUANG_ACCESS_ACCOUNTS = [
   {username:'44614',passwords:['3064'],name:'กฤติมา ชื่นใจ',room:'6/4',role:'student-admin',teams:['กีฬาประเภทลาน']},
   {username:'44472',passwords:['2764'],name:'ฤทัยรัตน์ จันทร์เกษม',room:'6/4',role:'student-admin',teams:['สวัสดิการ|พยาบาล']},
   {username:'44351',passwords:['1264'],name:'ชลิตา ชูสวัสดิ์',room:'6/4',role:'student-admin',teams:['ประชาสัมพันธ์']},
+  {username:'44319',passwords:['0265'],name:'นราธร เหมือนเอี่ยม',room:'6/5',role:'student-admin',teams:['ADMIN']},
   {username:'44692',passwords:['1465'],name:'มหาสมุทร ด่านสุขณรงค์',room:'6/5',role:'student-admin',teams:['ขบวน']},
   {username:'46618',passwords:['3765'],name:'จิราวรรณ โพธิ์ขำ',room:'6/5',role:'student-admin',teams:['สแตน']},
   {username:'44400',passwords:['2165'],name:'สุพนิตา ประสายกา',room:'6/5',role:'student-admin',teams:['หลีด|ดรัม|คัลเลอร์การ์ด']},
