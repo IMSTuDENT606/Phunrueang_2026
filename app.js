@@ -19,11 +19,14 @@ const firebaseKey = (key) => encodeURIComponent(String(key));
 let firebaseReady = false;
 let firebaseApplyingRemote = false;
 let firebaseConnectionState = 'กำลังเตรียมการเชื่อมต่อ Firebase';
+let firebaseConnectionDetail = '';
 const firebasePendingWrites = new Map();
 function setFirebaseConnectionState(state, error = '') {
   firebaseConnectionState = state;
+  firebaseConnectionDetail = error?.code || error?.message || String(error || '');
   document.documentElement.dataset.firebaseState = state === 'เชื่อมต่อแล้ว' ? 'connected' : 'error';
   console[state === 'เชื่อมต่อแล้ว' ? 'info' : 'warn'](`[Firebase] ${state}`, error);
+  if (document.querySelector('.page.active')?.id === 'admin') window.setTimeout(renderAdmin, 0);
 }
 function firebaseConfigured(config) {
   return Boolean(config && config.apiKey && config.databaseURL && config.projectId) && !Object.values(config).some((value) => String(value).includes('PASTE_YOUR_'));
@@ -96,7 +99,12 @@ async function startFirebaseSync() {
       window.dispatchEvent(new Event('phanuang-firebase-sync'));
       window.setTimeout(refreshRemoteViews, 0);
     }, (error) => setFirebaseConnectionState('เชื่อมต่อ Firebase ไม่สำเร็จ', error));
-  } catch (error) { setFirebaseConnectionState('เชื่อมต่อ Firebase ไม่สำเร็จ', error); }
+  } catch (error) {
+    const message = error?.code === 'auth/operation-not-allowed'
+      ? 'Firebase ยังไม่ได้เปิด Anonymous Authentication'
+      : 'เชื่อมต่อ Firebase ไม่สำเร็จ';
+    setFirebaseConnectionState(message, error);
+  }
 }
 startFirebaseSync();
 
@@ -1665,7 +1673,8 @@ function renderAdmin() {
   const host = $('#adminContent');
   const staff = JSON.parse(localStorage.getItem('phanuang-admin') || 'null');
   if (!staff) { host.innerHTML = `<div class="admin-login-shell"><div class="admin-login-visual"><small>PHUNRUEANG STAFF</small><div class="login-sigil"><i>✦</i><b>PR</b></div><h3>เบื้องหลังทุกชัยชนะ<br>คือทีมที่พร้อมเสมอ</h3><p>พื้นที่ปฏิบัติการสำหรับทีมงานคณะสีพันเรือง</p><div class="login-status"><span></span> ${STAFF_ACCOUNTS.length} STAFF ACCOUNTS READY</div></div><div class="admin-login"><div class="login-step">01 / AUTHENTICATION</div><h3>ยินดีต้อนรับกลับ</h3><p>ใช้ username และรหัสผ่านที่ได้รับเพื่อเข้าสู่ศูนย์บัญชาการ</p><form id="adminLoginForm"><div class="field"><label>Username / เลขประจำตัว</label><div class="admin-input"><span>◉</span><input id="adminStudentId" required inputmode="numeric" autocomplete="username" placeholder="เช่น 44447 หรือ 69651"></div></div><div class="field"><label>รหัสผ่าน</label><div class="admin-input"><span>◆</span><input id="adminPassword" required type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••"></div></div><div class="error" id="adminLoginError"></div><button class="primary">เข้าสู่ COMMAND CENTER <b>→</b></button></form><small class="admin-secure-note">นักเรียนแอดมินและครูที่ปรึกษาใช้บัญชีที่ได้รับ</small></div></div>`; $('#adminLoginForm').addEventListener('submit', (event) => { event.preventDefault(); const account = findStaffAccount($('#adminStudentId').value, $('#adminPassword').value); if (!account) { $('#adminLoginError').textContent = 'ไม่พบ username หรือรหัสผ่านไม่ถูกต้อง'; return; } localStorage.setItem('phanuang-admin', JSON.stringify({ username:account.username, name:account.name, room:account.room, role:account.role, teams:account.teams })); renderAdmin(); }); return; }
-  host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'ADVISOR ACCESS':'STUDENT ADMIN ACCESS'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>ออนไลน์</span></p></div><div class="admin-live" title="Firebase: ${escapeAttribute(firebaseConnectionState)}"><i></i> ${firebaseConnectionState==='เชื่อมต่อแล้ว'?'FIREBASE LIVE':'FIREBASE NOT READY'}</div><button class="mini" id="adminLogout">ออกจากระบบ ↗</button></header><nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อ<small>ATTENDANCE</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>ประวัติเช็คชื่อ<small>HISTORY</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลกีฬา<small>SPORTS</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>สมาชิก<small>MEMBERS</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>จัดการร้านค้า<small>STORE MANAGER</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>ORDERS & CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>GALLERY</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ELECTION</small></span></button></nav><div id="adminPanel"></div></div>`;
+  const firebaseLive=firebaseConnectionState==='เชื่อมต่อแล้ว',firebaseHint=firebaseConnectionDetail||firebaseConnectionState;
+  host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'ADVISOR ACCESS':'STUDENT ADMIN ACCESS'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>ออนไลน์</span></p></div><div class="admin-live" title="Firebase: ${escapeAttribute(firebaseHint)}"><i></i> ${firebaseLive?'FIREBASE LIVE':'FIREBASE NOT READY'}</div><button class="mini" id="adminLogout">ออกจากระบบ ↗</button></header>${firebaseLive?'':`<p class="note" style="margin:12px 0 0">Firebase ยังไม่พร้อม: ${escapeHTML(firebaseHint)} · เปิด Anonymous Authentication และตรวจสอบ Realtime Database Rules</p>`}<nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อ<small>ATTENDANCE</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>ประวัติเช็คชื่อ<small>HISTORY</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลกีฬา<small>SPORTS</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>สมาชิก<small>MEMBERS</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>จัดการร้านค้า<small>STORE MANAGER</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>ORDERS & CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>GALLERY</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ELECTION</small></span></button></nav><div id="adminPanel"></div></div>`;
   $('#adminLogout').addEventListener('click', () => { localStorage.removeItem('phanuang-admin'); renderAdmin(); });
   document.querySelectorAll('.admin-tab').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.admin-tab').forEach((item) => item.classList.toggle('active', item === button)); const panel = $('#adminPanel'); panel.classList.remove('panel-arrive'); void panel.offsetWidth; renderAdminPanel(button.dataset.adminTab); panel.classList.add('panel-arrive'); }));
   renderAdminPanel('attendance');
