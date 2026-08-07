@@ -4,13 +4,14 @@
  * The API key is intended to be public; access is protected by Firebase Rules.
  */
 window.FIREBASE_CONFIG = {
-  apiKey: "PASTE_YOUR_API_KEY",
-  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://PASTE_YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "PASTE_YOUR_PROJECT",
-  storageBucket: "PASTE_YOUR_PROJECT.firebasestorage.app",
-  messagingSenderId: "PASTE_YOUR_SENDER_ID",
-  appId: "PASTE_YOUR_APP_ID"
+  apiKey: "AIzaSyC04zaMAVs3KFqeG8W87T-uMCYgYjI8-tw",
+  authDomain: "phunrueang-2026.firebaseapp.com",
+  databaseURL: "https://phunrueang-2026-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId: "phunrueang-2026",
+  storageBucket: "phunrueang-2026.firebasestorage.app",
+  messagingSenderId: "136625876064",
+  appId: "1:136625876064:web:be3c3366b2dc1cd3d46705",
+  measurementId: "G-BDSRQP42QX"
 };
 
 /* Give this site a unique namespace if it shares the same Firebase project. */
