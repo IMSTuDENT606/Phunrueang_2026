@@ -26,6 +26,8 @@ let firebaseConnectionDetail = '';
 let firebaseAdminPermission = 'READ ONLY';
 let firebaseAuthPersistenceReady = Promise.resolve();
 const firebaseMemoryStorage = new Map();
+let electionVotesRuntime = null;
+let electionVoteSubmitting = false;
 function setFirebaseConnectionState(state, error = '') {
   firebaseConnectionState = state;
   firebaseConnectionDetail = error?.code || error?.message || String(error || '');
@@ -97,6 +99,7 @@ async function startFirebaseSync() {
     firebaseSyncRoot = root;
     const auth = firebase.auth();
     firebaseAuthPersistenceReady = configureFirebaseAuthPersistence(auth);
+    subscribeElectionBallots(root);
     auth.onAuthStateChanged((user) => {
       firebaseAuthUser = user || null;
       firebaseAdminPermission = user ? 'ADMIN WRITE' : 'READ ONLY';
@@ -1496,17 +1499,32 @@ function renderBallot() {
   $('#submitVote').addEventListener('click', submitVote);
 }
 function selectCandidate(option) { document.querySelectorAll('.ballot-option').forEach((item) => item.classList.remove('selected')); option.classList.add('selected'); selectedCandidate = option.dataset.candidate; }
-function submitVote() {
-  if (!selectedCandidate) { $('#voteError').textContent = 'กรุณากากบาทเลือกผู้สมัคร 1 คนก่อนส่งบัตร'; return; }
+async function submitVote() {
+  const error = $('#voteError');
+  if (!selectedCandidate) { error.textContent = 'กรุณากากบาทเลือกผู้สมัคร 1 คนก่อนส่งบัตร'; return; }
+  if (electionVoteSubmitting) return;
   const student = getElectionStudent();
   const config = getElectionConfig();
   if (!student || Date.now() >= new Date(config.close).getTime()) { renderElection(); return; }
-  const votes = getVotes();
-  if (votes.some((item) => item.studentId === student.studentId)) { renderElection(); return; }
-  votes.push({ electionId: config.electionId, studentId: student.studentId, room: `${student.grade}/${student.classroom}`, candidate: selectedCandidate, time: Date.now() });
-  localStorage.setItem('phanuang-election-votes', JSON.stringify(votes));
-  localStorage.setItem('phanuang-vote', JSON.stringify({ electionId: config.electionId, studentId: student.studentId, candidate: selectedCandidate, time: Date.now() }));
-  renderBallotCasting(config, selectedCandidate);
+  if (getVotes().some((item) => item.studentId === student.studentId)) { renderElection(); return; }
+  const button = $('#submitVote');
+  electionVoteSubmitting = true;
+  button.disabled = true;
+  button.innerHTML = 'กำลังบันทึกบัตรอย่างปลอดภัย…';
+  error.textContent = 'กำลังยืนยันบัตรกับหีบกลาง โปรดอย่าปิดหรือรีเฟรชหน้านี้';
+  try {
+    const vote = await commitElectionVote({ electionId: config.electionId, studentId: student.studentId, room: `${student.grade}/${student.classroom}`, candidate: selectedCandidate, time: Date.now() });
+    electionVotesRuntime = [...(electionVotesRuntime || getVotes()), vote].filter((item, index, all) => all.findIndex((other) => other.electionId === item.electionId && other.studentId === item.studentId) === index);
+    localStorage.setItem('phanuang-vote', JSON.stringify({ electionId: config.electionId, studentId: student.studentId, candidate: selectedCandidate, time: vote.time }));
+    renderBallotCasting(config, selectedCandidate);
+  } catch (submissionError) {
+    const duplicate = submissionError?.code === 'vote/already-cast';
+    error.textContent = duplicate ? 'เลขประจำตัวนี้ใช้สิทธิ์ไปแล้ว' : 'บันทึกบัตรไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่';
+    button.disabled = false;
+    button.innerHTML = 'พับบัตรและหย่อนลงหีบ <b>→</b>';
+  } finally {
+    electionVoteSubmitting = false;
+  }
 }
 function renderBallotCasting(config, candidateNumber) {
   const candidate = config.candidates.find((item) => String(item.number) === String(candidateNumber));
@@ -1530,7 +1548,7 @@ function startTimer(end) {
 function renderResults() {
   const config = getElectionConfig();
   const votes = getVotes();
-  const rooms = [...new Set(getElectionStudents().map((student) => `${student.grade}/${student.classroom}`))].slice(0, 6);
+  const rooms = getElectionResultRooms(config);
   const totals = config.candidates.map((candidate) => ({ ...candidate, votes: votes.filter((vote) => vote.candidate === String(candidate.number)).length })).sort((a, b) => b.votes - a.votes || Number(a.number) - Number(b.number));
   $('#electionContent').innerHTML = `<div class="results-universe results-dashboard">
     <div class="result-cinematic" aria-hidden="true"><div class="cinematic-stars"></div><div class="cinematic-zodiac">♈　♉　♊　♋　♌　♍　♎　♏　♐　♑　♒　♓</div><div class="cinematic-portal"><i></i><i></i><i></i><span>✦</span></div><div class="cinematic-copy"><small>THE CELESTIAL VERDICT</small><b>บทบัญชาแห่งดวงดาว</b><em>ชะตาได้ถูกเปิดเผยแล้ว</em></div></div>
@@ -1551,7 +1569,7 @@ function renderResults() {
 }
 function renderResultOverview(totals, rooms, config, votes) {
   const maxVotes = Math.max(1, ...totals.map((item) => item.votes));
-  $('#resultPanel').innerHTML = `<section class="overview-layout"><div class="prophecy-stage"><div class="celestial-rays" aria-hidden="true"></div><div class="prophecy-title"><span>♆</span><small>THE CARDS HAVE SPOKEN</small><h4>ไพ่แห่งผลลัพธ์</h4></div><div class="result-card-deck">${totals.map((candidate, index) => resultCandidateCard(candidate, index)).join('')}</div><div class="winner-prophecy">${totals[0] ? `<span>✦ คำพยากรณ์ลำดับที่หนึ่ง ✦</span><b>${escapeHTML(totals[0].name)}</b><small>ได้รับความไว้วางใจ ${totals[0].votes} คะแนน</small>` : 'ยังไม่มีคะแนน'}</div></div><aside class="room-summary"><header><div><small>CONSTELLATION TABLE</small><h4>สรุปคะแนนรายห้อง</h4></div><span>☽</span></header><div class="summary-table" style="--candidate-count:${config.candidates.length}"><div class="summary-row summary-head"><b>ห้อง</b>${config.candidates.map((candidate) => `<span style="--candidate-color:${candidate.color || '#d6a84f'}">เบอร์ ${escapeHTML(candidate.number)}</span>`).join('')}<strong>ใช้สิทธิ์</strong></div>${rooms.map((room) => { const roomVotes = votes.filter((vote) => vote.room === room); return `<button class="summary-row" data-summary-room="${room}"><b>ม.${room}</b>${config.candidates.map((candidate) => `<span style="--candidate-color:${candidate.color || '#d6a84f'}">${roomVotes.filter((vote) => vote.candidate === String(candidate.number)).length}</span>`).join('')}<strong>${roomVotes.length}</strong></button>`; }).join('')}</div><div class="candidate-legend">${totals.map((item, index) => `<div><i style="--candidate-color:${item.color || '#d6a84f'}"></i><span>อันดับ ${index + 1} · เบอร์ ${escapeHTML(item.number)}</span><b>${item.votes}</b><progress value="${item.votes}" max="${maxVotes}"></progress></div>`).join('')}</div></aside></section>`;
+  $('#resultPanel').innerHTML = `<section class="overview-layout"><div class="prophecy-stage"><div class="celestial-rays" aria-hidden="true"></div><div class="prophecy-title"><span>♆</span><small>THE CARDS HAVE SPOKEN</small><h4>ไพ่แห่งผลลัพธ์</h4></div><div class="result-card-deck">${totals.map((candidate, index) => resultCandidateCard(candidate, index)).join('')}</div><div class="winner-prophecy">${totals[0] ? `<span>✦ คำพยากรณ์ลำดับที่หนึ่ง ✦</span><b>${escapeHTML(totals[0].name)}</b><small>ได้รับความไว้วางใจ ${totals[0].votes} คะแนน</small>` : 'ยังไม่มีคะแนน'}</div></div><aside class="room-summary"><header><div><small>CONSTELLATION TABLE · ${rooms.length} CHAMBERS</small><h4>สรุปคะแนนรายห้อง</h4></div><span>☽</span></header><div class="summary-table" style="--candidate-count:${config.candidates.length}"><div class="summary-row summary-head"><b>ห้อง</b>${config.candidates.map((candidate) => `<span style="--candidate-color:${candidate.color || '#d6a84f'}">เบอร์ ${escapeHTML(candidate.number)}</span>`).join('')}<strong>ใช้สิทธิ์</strong></div>${rooms.map((room) => { const roomVotes = votes.filter((vote) => vote.room === room); return `<button class="summary-row" data-summary-room="${room}"><b>ม.${room}</b>${config.candidates.map((candidate) => `<span style="--candidate-color:${candidate.color || '#d6a84f'}">${roomVotes.filter((vote) => vote.candidate === String(candidate.number)).length}</span>`).join('')}<strong>${roomVotes.length}</strong></button>`; }).join('')}</div><div class="candidate-legend">${totals.map((item, index) => `<div><i style="--candidate-color:${item.color || '#d6a84f'}"></i><span>อันดับ ${index + 1} · เบอร์ ${escapeHTML(item.number)}</span><b>${item.votes}</b><progress value="${item.votes}" max="${maxVotes}"></progress></div>`).join('')}</div></aside></section>`;
   document.querySelectorAll('[data-summary-room]').forEach((button) => button.addEventListener('click', () => {
     document.querySelector('[data-result-tab="rooms"]').click();
     renderRoomDashboard(rooms, config, votes, button.dataset.summaryRoom);
@@ -1564,14 +1582,15 @@ function resultCandidateCard(candidate, index) {
 }
 function renderRoomDashboard(rooms, config, votes, selectedRoom = rooms[0]) {
   const room = selectedRoom || rooms[0];
-  $('#resultPanel').innerHTML = `<section class="room-dashboard sacred-room-dashboard"><div class="chamber-title"><span>☾</span><div><small>THE SIX CELESTIAL CHAMBERS</small><h4>มหาสภาแห่งดวงเสียง</h4><p>เลือกกลุ่มดาวประจำห้อง เพื่อเปิดผนึกผลคะแนนและชะตาของสมาชิก</p></div><span>☽</span></div><aside class="room-selector constellation-gates">${rooms.map((item, index) => `<button class="${item === room ? 'active' : ''}" data-room-map="${item}" style="--gate-index:${index}"><i class="gate-orbit"></i><span>${['♈','♉','♊','♋','♌','♍'][index] || '✦'}</span><small>CELESTIAL CHAMBER ${String(index + 1).padStart(2,'0')}</small><b>ม.${item}</b><em>เปิดคำพยากรณ์</em></button>`).join('')}</aside><div class="room-map-host" id="roomMapHost"></div></section>`;
+  const zodiacSigns = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+  $('#resultPanel').innerHTML = `<section class="room-dashboard sacred-room-dashboard"><div class="chamber-title"><span>☾</span><div><small>CELESTIAL CHAMBERS · ${rooms.length} ROOMS</small><h4>มหาสภาแห่งดวงเสียง</h4><p>เลือกกลุ่มดาวประจำห้อง เพื่อเปิดผนึกผลคะแนนและชะตาของสมาชิก</p></div><span>☽</span></div><aside class="room-selector constellation-gates" style="--room-count:${rooms.length}">${rooms.map((item, index) => `<button class="${item === room ? 'active' : ''}" data-room-map="${item}" style="--gate-index:${index}"><i class="gate-orbit"></i><span>${zodiacSigns[index] || '✦'}</span><small>CELESTIAL CHAMBER ${String(index + 1).padStart(2,'0')}</small><b>ม.${item}</b><em>เปิดคำพยากรณ์</em></button>`).join('')}</aside><div class="room-map-host" id="roomMapHost"></div></section>`;
   document.querySelectorAll('[data-room-map]').forEach((button) => button.addEventListener('click', () => {
     document.querySelectorAll('[data-room-map]').forEach((item) => item.classList.toggle('active', item === button));
-    renderRoomSeatMap(button.dataset.roomMap, config, votes);
+    renderRoomSeatMap(button.dataset.roomMap, config, votes, rooms);
   }));
-  renderRoomSeatMap(room, config, votes);
+  renderRoomSeatMap(room, config, votes, rooms);
 }
-function renderRoomSeatMap(room, config, votes) {
+function renderRoomSeatMap(room, config, votes, rooms = getElectionResultRooms(config)) {
   const students = getElectionStudents().filter((student) => `${student.grade}/${student.classroom}` === room);
   const roomVotes = votes.filter((vote) => vote.room === room);
   const candidateCounts = config.candidates.map((candidate) => ({ ...candidate, votes: roomVotes.filter((vote) => vote.candidate === String(candidate.number)).length }));
@@ -1582,8 +1601,8 @@ function renderRoomSeatMap(room, config, votes) {
     const row = Math.floor(index / 13);
     return `<i class="parliament-seat ${candidate ? 'voted' : ''}" style="--seat-color:${candidate?.color || '#26324b'};--seat-angle:${angle}deg;--seat-radius:${215 + row * 68}px;--seat-delay:${index * .025}s" title="${candidate ? `คะแนนของผู้สมัครหมายเลข ${candidate.number}` : 'ยังไม่ใช้สิทธิ์'}"></i>`;
   }).join('');
-  const roomIndex = Math.max(0, [...new Set(getElectionStudents().map((student) => `${student.grade}/${student.classroom}`))].indexOf(room));
-  const zodiac = ['♈','♉','♊','♋','♌','♍'][roomIndex] || '✦';
+  const roomIndex = Math.max(0, rooms.indexOf(room));
+  const zodiac = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'][roomIndex] || '✦';
   $('#roomMapHost').innerHTML = `<div class="room-revelation"><header class="room-map-head"><div class="room-sacred-seal"><i></i><span>${zodiac}</span></div><div><small>CELESTIAL CHAMBER ${String(roomIndex + 1).padStart(2,'0')} · THE ORACLE IS OPEN</small><h4>สภาดวงเสียงแห่งห้อง ม.${room}</h4><p>ทุกอัญมณีคือหนึ่งเสียงที่ถูกจารึกไว้ในวงโคจรแห่งพันเรือง</p></div><div class="turnout-orb"><strong>${roomVotes.length}</strong><span>จาก ${students.length}</span><small>ดวงเสียง</small></div></header><div class="sacred-map-frame"><i class="frame-wing left"></i><i class="frame-wing right"></i><div class="parliament-map"><div class="chamber-zodiac-ring" aria-hidden="true">♈　♉　♊　♋　♌　♍　♎　♏　♐　♑　♒　♓</div><div class="map-stars" aria-hidden="true">✦　·　✧　·　☾　·　✦　·　☽　·　✧　·　✦</div><div class="seat-orbit-line orbit-line-one"></div><div class="seat-orbit-line orbit-line-two"></div><div class="seat-orbit-line orbit-line-three"></div><div class="seat-orbits">${seats}</div><div class="speaker-oracle"><i></i><span>☉</span><b>แท่นผนึกดวงเสียง</b><small>THE SACRED BALLOT</small></div><div class="floor-sigil">✦</div></div></div><div class="room-candidate-summary sacred-tallies">${candidateCounts.map((candidate, index) => `<div style="--candidate-color:${candidate.color || '#d6a84f'}"><span class="tally-arcana">${String(index + 1).padStart(2,'0')}</span><i></i><span>ผู้สมัครหมายเลข ${escapeHTML(candidate.number)}<small>${escapeHTML(candidate.name)}</small></span><b>${candidate.votes}<small>ดวงเสียง</small></b></div>`).join('')}<div class="not-voted"><span class="tally-arcana">☾</span><i></i><span>ดวงเสียงที่ยังไม่ถูกจารึก<small>ยังไม่ใช้สิทธิ์</small></span><b>${Math.max(0, students.length - roomVotes.length)}<small>คน</small></b></div></div></div>`;
 }
 function getElectionConfig() {
@@ -1592,6 +1611,11 @@ function getElectionConfig() {
   // การตั้งค่าที่บันทึกก่อนเพิ่มห้อง ม.1 จะไม่มีชื่อห้องในรายการ จึงคงสิทธิ์ ม.1 เดิมไว้ให้ทั้งสองห้อง
   if (config.grades.includes(1) && config.rooms.length) config.rooms = [...new Set([...config.rooms, '1/3', '1/13'])];
   return config;
+}
+function getElectionResultRooms(config) {
+  return Object.values(CLASSROOM_DATABASE)
+    .map((classroom) => classroom.room)
+    .filter((room) => getElectionStudents().some((student) => student.room === room && isStudentEligible(student, config)));
 }
 function getElectionStudents() {
   return Object.values(CLASSROOM_DATABASE).flatMap((classroom) => {
