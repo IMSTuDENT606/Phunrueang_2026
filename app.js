@@ -18,6 +18,9 @@ const isFirebaseSharedKey = (key) => FIREBASE_SHARED_KEYS.has(String(key)) || St
 const firebaseKey = (key) => encodeURIComponent(String(key));
 let firebaseReady = false;
 let firebaseApplyingRemote = false;
+let firebaseReadSnapshotReceived = false;
+let firebaseAuthUser = null;
+let firebaseSyncRoot = null;
 let firebaseConnectionState = 'กำลังเตรียมการเชื่อมต่อ Firebase';
 let firebaseConnectionDetail = '';
 const firebasePendingWrites = new Map();
@@ -48,62 +51,71 @@ async function startFirebaseSync() {
   }
   try {
     if (!firebase.apps.length) firebase.initializeApp(config);
+    console.info('[Firebase] initialized', { projectId: config.projectId, databaseURL: config.databaseURL });
     const root = firebase.database().ref(`sites/${window.FIREBASE_SITE_ID || 'phanuang'}/state`);
+    firebaseSyncRoot = root;
+    firebase.auth().onAuthStateChanged((user) => {
+      firebaseAuthUser = user || null;
+      console.info('[Firebase] auth state', user ? { uid: user.uid, email: user.email || null } : { user: null });
+      if (user) {
+        firebasePendingWrites.forEach((operation, key) => operation.type === 'remove' ? remove(key) : write(key, operation.value));
+        firebasePendingWrites.clear();
+      }
+      if (document.querySelector('.page.active')?.id === 'admin') window.setTimeout(renderAdmin, 0);
+    });
     const nativeSet = Storage.prototype.setItem;
     const nativeRemove = Storage.prototype.removeItem;
-    const write = (key, value) => root.child(firebaseKey(key)).set({ value: String(value), updatedAt: firebase.database.ServerValue.TIMESTAMP })
-      .catch((error) => { firebasePendingWrites.set(key, { type: 'set', value: String(value) }); setFirebaseConnectionState('บันทึก Firebase ไม่สำเร็จ', error); });
-    const remove = (key) => root.child(firebaseKey(key)).remove()
-      .catch((error) => { firebasePendingWrites.set(key, { type: 'remove' }); setFirebaseConnectionState('ลบข้อมูล Firebase ไม่สำเร็จ', error); });
+    const write = (key, value) => {
+      if (!firebaseAuthUser) { console.warn('[Firebase] write blocked: no authenticated admin', { key }); return Promise.resolve(); }
+      return root.child(firebaseKey(key)).set({ value: String(value), updatedAt: firebase.database.ServerValue.TIMESTAMP })
+        .catch((error) => { firebasePendingWrites.set(key, { type: 'set', value: String(value) }); console.error('[Firebase] write error', error?.code, error); setFirebaseConnectionState('บันทึก Firebase ไม่สำเร็จ', error); });
+    };
+    const remove = (key) => {
+      if (!firebaseAuthUser) { console.warn('[Firebase] remove blocked: no authenticated admin', { key }); return Promise.resolve(); }
+      return root.child(firebaseKey(key)).remove()
+        .catch((error) => { firebasePendingWrites.set(key, { type: 'remove' }); console.error('[Firebase] remove error', error?.code, error); setFirebaseConnectionState('ลบข้อมูล Firebase ไม่สำเร็จ', error); });
+    };
     Storage.prototype.setItem = function(key, value) {
+      if (this === localStorage && isFirebaseSharedKey(key) && firebaseReadSnapshotReceived && !firebaseApplyingRemote && !firebaseAuthUser) {
+        console.warn('[Firebase] local write ignored: authenticated admin required', { key: String(key) });
+        return;
+      }
       nativeSet.call(this, key, value);
       if (this === localStorage && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
-        if (firebaseReady) write(key, value); else firebasePendingWrites.set(String(key), { type: 'set', value: String(value) });
+        if (firebaseReady && firebaseAuthUser) write(key, value);
       }
     };
     Storage.prototype.removeItem = function(key) {
+      if (this === localStorage && isFirebaseSharedKey(key) && firebaseReadSnapshotReceived && !firebaseApplyingRemote && !firebaseAuthUser) {
+        console.warn('[Firebase] local remove ignored: authenticated admin required', { key: String(key) });
+        return;
+      }
       nativeRemove.call(this, key);
       if (this === localStorage && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
-        if (firebaseReady) remove(key); else firebasePendingWrites.set(String(key), { type: 'remove' });
+        if (firebaseReady && firebaseAuthUser) remove(key);
       }
     };
-    // Anonymous Auth lets Firebase rules reject unauthenticated requests without
-    // exposing any password or service-account secret in this static website.
-    await firebase.auth().signInAnonymously();
-    let firstSnapshot = true;
-    let previousCloudKeys = new Set();
+    console.info('[Firebase] Realtime listener attached', { path: root.toString() });
     root.on('value', (snapshot) => {
       const cloud = snapshot.val() || {};
       const currentCloudKeys = new Set(Object.keys(cloud).map(decodeURIComponent));
+      console.info('[Firebase] snapshot received', { exists: snapshot.exists(), keyCount: currentCloudKeys.size });
       firebaseApplyingRemote = true;
-      previousCloudKeys.forEach((key) => { if (!currentCloudKeys.has(key)) nativeRemove.call(localStorage, key); });
+      Object.keys(localStorage).filter(isFirebaseSharedKey).forEach((key) => { if (!currentCloudKeys.has(key)) nativeRemove.call(localStorage, key); });
       Object.entries(cloud).forEach(([encodedKey, record]) => {
         const key = decodeURIComponent(encodedKey);
         if (record && typeof record.value === 'string') nativeSet.call(localStorage, key, record.value);
       });
       firebaseApplyingRemote = false;
-      if (firstSnapshot && !snapshot.exists()) {
-        // One-time migration of existing browser data. It never runs again after data exists.
-        firebaseApplyingRemote = false;
-        Object.keys(localStorage).filter(isFirebaseSharedKey).forEach((key) => {
-          const value = localStorage.getItem(key);
-          if (value !== null) root.child(firebaseKey(key)).set({ value, updatedAt: firebase.database.ServerValue.TIMESTAMP });
-        });
-      }
-      previousCloudKeys = currentCloudKeys;
-      firstSnapshot = false;
+      firebaseReadSnapshotReceived = true;
       firebaseReady = true;
-      firebasePendingWrites.forEach((operation, key) => operation.type === 'remove' ? remove(key) : write(key, operation.value));
-      firebasePendingWrites.clear();
       setFirebaseConnectionState('เชื่อมต่อแล้ว');
       window.dispatchEvent(new Event('phanuang-firebase-sync'));
       window.setTimeout(refreshRemoteViews, 0);
-    }, (error) => setFirebaseConnectionState('เชื่อมต่อ Firebase ไม่สำเร็จ', error));
+    }, (error) => { console.error('[Firebase] Realtime listener error', error?.code, error); setFirebaseConnectionState('เชื่อมต่อ Firebase ไม่สำเร็จ', error); });
   } catch (error) {
-    const message = error?.code === 'auth/operation-not-allowed'
-      ? 'Firebase ยังไม่ได้เปิด Anonymous Authentication'
-      : 'เชื่อมต่อ Firebase ไม่สำเร็จ';
-    setFirebaseConnectionState(message, error);
+    console.error('[Firebase] initialization error', error?.code, error);
+    setFirebaseConnectionState('เชื่อมต่อ Firebase ไม่สำเร็จ', error);
   }
 }
 startFirebaseSync();
@@ -1649,7 +1661,22 @@ async function renderStoreAdmin(host){
 const STAFF_ACCOUNTS = Array.isArray(window.PHANUANG_ACCESS_ACCOUNTS) ? window.PHANUANG_ACCESS_ACCOUNTS : [];
 const TEACHER_ACCOUNTS = STAFF_ACCOUNTS.filter((account) => account.role === 'teacher');
 const STUDENT_ADMIN_ACCOUNTS = STAFF_ACCOUNTS.filter((account) => account.role === 'student-admin');
-function findStaffAccount(username, password) { return STAFF_ACCOUNTS.find((account) => String(account.username) === String(username).trim() && (account.passwords || []).includes(String(password))); }
+// access-data.js only identifies an allowed admin and their display role. Firebase
+// Authentication is the only authority that verifies the password.
+function findStaffAccount(username) { return STAFF_ACCOUNTS.find((account) => String(account.username) === String(username).trim()); }
+function firebaseAdminEmail(account) {
+  const domain = String(window.FIREBASE_ADMIN_EMAIL_DOMAIN || 'phunrueang.admin').replace(/^@/, '');
+  return account.firebaseEmail || `${account.username}@${domain}`;
+}
+function firebaseAdminPassword(password) {
+  return `pn_${String(password)}`;
+}
+async function signInFirebaseAdmin(account, password) {
+  if (!window.firebase || !firebaseConfigured(window.FIREBASE_CONFIG)) throw Object.assign(new Error('Firebase is not configured'), { code: 'firebase/not-configured' });
+  const credential = await firebase.auth().signInWithEmailAndPassword(firebaseAdminEmail(account), firebaseAdminPassword(password));
+  console.info('[Firebase] admin authenticated for write', { uid: credential.user.uid, email: credential.user.email || null });
+  return credential.user;
+}
 function teacherAccountsForRooms(rooms = []) { return TEACHER_ACCOUNTS.filter((teacher) => rooms.includes(teacher.room)); }
 if (!localStorage.getItem('phanuang-access-directory') && Array.isArray(window.PHANUANG_ACCESS_DIRECTORY)) localStorage.setItem('phanuang-access-directory', JSON.stringify(window.PHANUANG_ACCESS_DIRECTORY));
 const seats = Array.from({ length: 10 }, (_, row) => Array.from({ length: 18 }, (_, col) => `${String.fromCharCode(65 + row)}${col + 1}`));
@@ -1672,10 +1699,10 @@ function getAttendanceWindowStatus(config = getAttendanceConfig()) { const now =
 function renderAdmin() {
   const host = $('#adminContent');
   const staff = JSON.parse(localStorage.getItem('phanuang-admin') || 'null');
-  if (!staff) { host.innerHTML = `<div class="admin-login-shell"><div class="admin-login-visual"><small>PHUNRUEANG STAFF</small><div class="login-sigil"><i>✦</i><b>PR</b></div><h3>เบื้องหลังทุกชัยชนะ<br>คือทีมที่พร้อมเสมอ</h3><p>พื้นที่ปฏิบัติการสำหรับทีมงานคณะสีพันเรือง</p><div class="login-status"><span></span> ${STAFF_ACCOUNTS.length} STAFF ACCOUNTS READY</div></div><div class="admin-login"><div class="login-step">01 / AUTHENTICATION</div><h3>ยินดีต้อนรับกลับ</h3><p>ใช้ username และรหัสผ่านที่ได้รับเพื่อเข้าสู่ศูนย์บัญชาการ</p><form id="adminLoginForm"><div class="field"><label>Username / เลขประจำตัว</label><div class="admin-input"><span>◉</span><input id="adminStudentId" required inputmode="numeric" autocomplete="username" placeholder="เช่น 44447 หรือ 69651"></div></div><div class="field"><label>รหัสผ่าน</label><div class="admin-input"><span>◆</span><input id="adminPassword" required type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••"></div></div><div class="error" id="adminLoginError"></div><button class="primary">เข้าสู่ COMMAND CENTER <b>→</b></button></form><small class="admin-secure-note">นักเรียนแอดมินและครูที่ปรึกษาใช้บัญชีที่ได้รับ</small></div></div>`; $('#adminLoginForm').addEventListener('submit', (event) => { event.preventDefault(); const account = findStaffAccount($('#adminStudentId').value, $('#adminPassword').value); if (!account) { $('#adminLoginError').textContent = 'ไม่พบ username หรือรหัสผ่านไม่ถูกต้อง'; return; } localStorage.setItem('phanuang-admin', JSON.stringify({ username:account.username, name:account.name, room:account.room, role:account.role, teams:account.teams })); renderAdmin(); }); return; }
+  if (!staff) { host.innerHTML = `<div class="admin-login-shell"><div class="admin-login-visual"><small>PHUNRUEANG STAFF</small><div class="login-sigil"><i>✦</i><b>PR</b></div><h3>เบื้องหลังทุกชัยชนะ<br>คือทีมที่พร้อมเสมอ</h3><p>พื้นที่ปฏิบัติการสำหรับทีมงานคณะสีพันเรือง</p><div class="login-status"><span></span> ${STAFF_ACCOUNTS.length} STAFF ACCOUNTS READY</div></div><div class="admin-login"><div class="login-step">01 / AUTHENTICATION</div><h3>ยินดีต้อนรับกลับ</h3><p>กรอกเลขประจำตัวและรหัสผ่านเพื่อเข้าสู่ศูนย์บัญชาการ</p><form id="adminLoginForm"><div class="field"><label>Username / เลขประจำตัว</label><div class="admin-input"><span>◉</span><input id="adminStudentId" required inputmode="numeric" autocomplete="username" placeholder="เช่น 44447 หรือ 69651"></div></div><div class="field"><label>รหัสผ่าน</label><div class="admin-input"><span>◆</span><input id="adminPassword" required type="password" autocomplete="current-password" placeholder="••••"></div></div><div class="error" id="adminLoginError"></div><button class="primary">เข้าสู่ COMMAND CENTER <b>→</b></button></form><small class="admin-secure-note">บัญชีผู้ดูแลเท่านั้นที่สามารถบันทึกข้อมูลส่วนกลางได้</small></div></div>`; $('#adminLoginForm').addEventListener('submit', async (event) => { event.preventDefault(); const button=$('#adminLoginForm button'), username=$('#adminStudentId').value, password=$('#adminPassword').value, account=findStaffAccount(username); if (!account) { $('#adminLoginError').textContent = 'ไม่พบเลขประจำตัวผู้ดูแล'; return; } button.disabled=true; $('#adminLoginError').textContent='กำลังยืนยันตัวตน…'; try { await signInFirebaseAdmin(account,password); localStorage.setItem('phanuang-admin', JSON.stringify({ username:account.username, name:account.name, room:account.room, role:account.role, teams:account.teams })); renderAdmin(); } catch (error) { console.error('[Firebase] admin sign-in error', error?.code, error); $('#adminLoginError').textContent = error?.code === 'auth/invalid-credential' || error?.code === 'auth/wrong-password' ? 'รหัสผ่านไม่ถูกต้อง' : `ยืนยันตัวตนไม่สำเร็จ (${error?.code || 'unknown-error'})`; button.disabled=false; } }); return; }
   const firebaseLive=firebaseConnectionState==='เชื่อมต่อแล้ว',firebaseHint=firebaseConnectionDetail||firebaseConnectionState;
-  host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'ADVISOR ACCESS':'STUDENT ADMIN ACCESS'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>ออนไลน์</span></p></div><div class="admin-live" title="Firebase: ${escapeAttribute(firebaseHint)}"><i></i> ${firebaseLive?'FIREBASE LIVE':'FIREBASE NOT READY'}</div><button class="mini" id="adminLogout">ออกจากระบบ ↗</button></header>${firebaseLive?'':`<p class="note" style="margin:12px 0 0">Firebase ยังไม่พร้อม: ${escapeHTML(firebaseHint)} · เปิด Anonymous Authentication และตรวจสอบ Realtime Database Rules</p>`}<nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อ<small>ATTENDANCE</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>ประวัติเช็คชื่อ<small>HISTORY</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลกีฬา<small>SPORTS</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>สมาชิก<small>MEMBERS</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>จัดการร้านค้า<small>STORE MANAGER</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>ORDERS & CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>GALLERY</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ELECTION</small></span></button></nav><div id="adminPanel"></div></div>`;
-  $('#adminLogout').addEventListener('click', () => { localStorage.removeItem('phanuang-admin'); renderAdmin(); });
+  host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'ADVISOR ACCESS':'STUDENT ADMIN ACCESS'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>ออนไลน์</span></p></div><div class="admin-live" title="Firebase: ${escapeAttribute(firebaseHint)}"><i></i> ${firebaseLive&&firebaseAuthUser?'FIREBASE LIVE':'FIREBASE READ ONLY'}</div><button class="mini" id="adminLogout">ออกจากระบบ ↗</button></header>${firebaseLive&&firebaseAuthUser?'':`<p class="note" style="margin:12px 0 0">${firebaseLive?'Firebase อ่านข้อมูลได้ แต่ยังไม่ได้ยืนยันตัวตนสำหรับการบันทึก':'Firebase ยังไม่พร้อม: '+escapeHTML(firebaseHint)}</p>`}<nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อ<small>ATTENDANCE</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>ประวัติเช็คชื่อ<small>HISTORY</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลกีฬา<small>SPORTS</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>สมาชิก<small>MEMBERS</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>จัดการร้านค้า<small>STORE MANAGER</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>ORDERS & CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>GALLERY</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ELECTION</small></span></button></nav><div id="adminPanel"></div></div>`;
+  $('#adminLogout').addEventListener('click', async () => { localStorage.removeItem('phanuang-admin'); try { await firebase.auth().signOut(); } catch (error) { console.error('[Firebase] admin sign-out error', error?.code, error); } renderAdmin(); });
   document.querySelectorAll('.admin-tab').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.admin-tab').forEach((item) => item.classList.toggle('active', item === button)); const panel = $('#adminPanel'); panel.classList.remove('panel-arrive'); void panel.offsetWidth; renderAdminPanel(button.dataset.adminTab); panel.classList.add('panel-arrive'); }));
   renderAdminPanel('attendance');
 }

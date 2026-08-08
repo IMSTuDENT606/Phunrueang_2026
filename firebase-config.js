@@ -16,3 +16,8 @@ window.FIREBASE_CONFIG = {
 
 /* Give this site a unique namespace if it shares the same Firebase project. */
 window.FIREBASE_SITE_ID = "phanuang";
+
+/* Firebase Email/Password accounts for staff use: <username>@<domain>.
+ * Example: username 44447 signs in as 44447@phunrueang.admin.
+ */
+window.FIREBASE_ADMIN_EMAIL_DOMAIN = "phunrueang.admin";
