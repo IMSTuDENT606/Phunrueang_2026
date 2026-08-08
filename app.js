@@ -670,7 +670,22 @@ const MEMBER_ROLES = ['ประธานสี','รองประธานส
 function openCommitteeDatabase() { return new Promise((resolve, reject) => { const request = indexedDB.open(COMMITTEE_DB, 1); request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains(COMMITTEE_STORE)) request.result.createObjectStore(COMMITTEE_STORE); }; request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
 async function readCommitteeDatabase() { const database = await openCommitteeDatabase(); return new Promise((resolve, reject) => { const transaction = database.transaction(COMMITTEE_STORE, 'readonly'); const request = transaction.objectStore(COMMITTEE_STORE).get('members'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); transaction.oncomplete = () => database.close(); }); }
 async function setCommitteeMembers(members) { const database = await openCommitteeDatabase(); await new Promise((resolve, reject) => { const transaction = database.transaction(COMMITTEE_STORE, 'readwrite'); transaction.objectStore(COMMITTEE_STORE).put(members, 'members'); transaction.oncomplete = resolve; transaction.onerror = () => reject(transaction.error); transaction.onabort = () => reject(transaction.error); }); database.close(); }
-async function getCommitteeMembers() { try { const shared = JSON.parse(localStorage.getItem(COMMITTEE_KEY) || 'null'); if (Array.isArray(shared)) return shared; const saved = await readCommitteeDatabase(); if (Array.isArray(saved) && saved.length) { localStorage.setItem(COMMITTEE_KEY, JSON.stringify(saved)); return saved; } return []; } catch (_) { return []; } }
+function getSharedCommitteeMembers() { try { const shared = JSON.parse(localStorage.getItem(COMMITTEE_KEY) || 'null'); return Array.isArray(shared) ? shared : null; } catch (error) { console.error('[Members] localStorage read error', error); return null; } }
+async function getCommitteeMembers() {
+  const shared = getSharedCommitteeMembers();
+  if (shared) return shared;
+  // Firebase has already supplied the authoritative snapshot. Never let an old
+  // IndexedDB record (notably on Safari) repopulate the shared member cache.
+  if (firebaseReadSnapshotReceived) return [];
+  try {
+    const saved = await readCommitteeDatabase();
+    const remoteAfterRead = getSharedCommitteeMembers();
+    if (remoteAfterRead) return remoteAfterRead;
+    if (firebaseReadSnapshotReceived) return [];
+    if (Array.isArray(saved) && saved.length) { localStorage.setItem(COMMITTEE_KEY, JSON.stringify(saved)); return saved; }
+  } catch (error) { console.error('[Members] IndexedDB fallback error', error); }
+  return [];
+}
 function escapeAttribute(value = '') { return escapeHTML(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 const MEMBER_CONTACTS = [
   { key:'instagram', label:'Instagram', icon:'◎', hint:'ชื่อผู้ใช้หรือ URL', base:'https://instagram.com/' },
@@ -705,10 +720,16 @@ function openMemberContactModal(member) {
   window.requestAnimationFrame(() => { modal.classList.add('is-open'); modal.querySelector('.member-modal-close').focus(); });
 }
 let committeeMembersRendered = false;
+let committeeRemoteRevision = 0;
 async function renderCommitteeMembers(force = false) {
   const host = $('#committeeMembers'); if (!host) return;
   if (committeeMembersRendered && !force && host.childElementCount) return;
-  const all = (await getCommitteeMembers()).filter((item) => item.published !== false).sort((a,b) => (a.order || 0) - (b.order || 0));
+  const requestedRevision = committeeRemoteRevision;
+  console.info('[Members] render started');
+  try {
+  const rawMembers = await getCommitteeMembers();
+  if (requestedRevision !== committeeRemoteRevision) return renderCommitteeMembers(true);
+  const all = rawMembers.filter((item) => item.published !== false).sort((a,b) => (a.order || 0) - (b.order || 0));
   const section = (type, eyebrow, title, text) => {
     const members = all.filter((item) => item.type === type);
     return `<section class="committee-section"><header class="committee-heading"><div><small>${eyebrow}</small><h3>${title}</h3></div><p>${text}</p></header>${members.length ? `<div class="committee-grid">${members.map((member, index) => `<article class="committee-card ${type === 'student' ? 'is-clickable' : ''}" style="--member-index:${index}" ${type === 'student' ? `tabindex="0" role="button" data-member-index="${all.indexOf(member)}" aria-label="ดูช่องทางติดต่อของ ${escapeAttribute(member.name || 'สมาชิก')}"` : ''}><div class="committee-photo">${member.image ? `<img src="${member.image}" alt="${escapeHTML(member.name || member.role)}" loading="lazy" decoding="async">` : '<span aria-hidden="true">✦</span>'}<b>${String(index + 1).padStart(2,'0')}</b></div><div class="committee-info"><small>${escapeHTML(member.role || 'สมาชิกคณะสี')}</small><h4>${escapeHTML(member.name || 'รอระบุชื่อ')}</h4>${member.nickname ? `<p>ชื่อเล่น <strong>${escapeHTML(member.nickname)}</strong></p>` : '<p>ทีมพันเรือง</p>'}</div></article>`).join('')}</div>` : `<div class="leaders-empty card"><span aria-hidden="true">✦</span><p>ยังไม่มีข้อมูล${type === 'student' ? 'แกนนำนักเรียน' : 'คณะครู'} — เพิ่มได้จากหน้าแอดมิน</p></div>`}</section>`;
@@ -716,7 +737,18 @@ async function renderCommitteeMembers(force = false) {
   host.innerHTML = section('student','STUDENT LEADERS','แกนนำนักเรียน','พลังหลักเบื้องหลังทุกสนาม ทุกขบวน และทุกเสียงเชียร์') + section('teacher','OUR ADVISORS','คณะครู','ครูผู้ดูแล ให้คำปรึกษา และร่วมผลักดันชาวพันเรือง');
   committeeMembersRendered = true;
   host.querySelectorAll('.committee-card.is-clickable').forEach((card) => { const open = () => openMemberContactModal(all[Number(card.dataset.memberIndex)]); card.addEventListener('click', open); card.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); } }); });
+  console.info('[Members] render completed');
+  } catch (error) { console.error('[Members] render error', error); }
 }
+window.addEventListener('phanuang-firebase-sync', () => {
+  committeeRemoteRevision += 1;
+  const members = getSharedCommitteeMembers() || [];
+  console.info('[Members] remote sync received');
+  console.info('[Members] student count:', members.filter((member) => member.type === 'student').length);
+  console.info('[Members] teacher count:', members.filter((member) => member.type === 'teacher').length);
+  console.info('[Members] localStorage updated');
+  if (document.querySelector('.page.active')?.id === 'members') void renderCommitteeMembers(true);
+});
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeMemberContactModal(); });
 
 function openMemberCropStudio(imageSource, onSave) {
