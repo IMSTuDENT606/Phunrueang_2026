@@ -21,19 +21,38 @@ let firebaseApplyingRemote = false;
 let firebaseReadSnapshotReceived = false;
 let firebaseAuthUser = null;
 let firebaseSyncRoot = null;
-let firebaseConnectionState = 'OFFLINE';
-let firebaseConnectionDetail = '';
+let firebaseConnectionState = 'CONNECTING';
+let firebaseConnectionDetail = 'Awaiting Realtime Database connection';
 let firebaseAdminPermission = 'READ ONLY';
 let firebaseAuthPersistenceReady = Promise.resolve();
 const firebaseMemoryStorage = new Map();
 let electionVotesRuntime = null;
 let electionVoteSubmitting = false;
-function setFirebaseConnectionState(state, error = '') {
-  firebaseConnectionState = state;
-  firebaseConnectionDetail = error?.code || error?.message || String(error || '');
-  document.documentElement.dataset.firebaseState = state === 'LIVE' ? 'connected' : 'offline';
-  console[state === 'LIVE' ? 'info' : 'warn'](`[Firebase] database ${state}`, error);
+function setFirebaseConnectionState(connected) {
+  firebaseConnectionState = connected ? 'LIVE' : 'OFFLINE';
+  firebaseConnectionDetail = connected ? '' : 'Realtime Database disconnected';
+  document.documentElement.dataset.firebaseState = connected ? 'connected' : 'offline';
+  console[connected ? 'info' : 'warn'](`[Firebase] database ${firebaseConnectionState}`);
   if (document.querySelector('.page.active')?.id === 'admin') window.setTimeout(renderAdmin, 0);
+}
+
+// Election votes are mirrored by the shared root listener below. Keep this global
+// hook for pages that load Election independently, without coupling it to Firebase status.
+function subscribeElectionBallots(root) {
+  if (!root?.child) throw new Error('Firebase sync root is unavailable');
+}
+window.subscribeElectionBallots = subscribeElectionBallots;
+
+function startElectionBallotSubscription(root) {
+  try {
+    if (typeof window.subscribeElectionBallots === 'function') {
+      window.subscribeElectionBallots(root);
+    } else {
+      console.warn('[Election] subscribeElectionBallots unavailable');
+    }
+  } catch (error) {
+    console.error('[Election] subscribe error', error?.code, error?.message || error);
+  }
 }
 function firebaseConfigured(config) {
   return Boolean(config && config.apiKey && config.databaseURL && config.projectId) && !Object.values(config).some((value) => String(value).includes('PASTE_YOUR_'));
@@ -87,7 +106,7 @@ function waitForFirebaseAuthUser(auth, expectedUid) {
 async function startFirebaseSync() {
   const config = window.FIREBASE_CONFIG;
   if (!window.firebase || !firebaseConfigured(config)) {
-    setFirebaseConnectionState('OFFLINE', 'Firebase config or compat SDK is unavailable');
+    console.error('[Firebase] initialization error: Firebase config or compat SDK is unavailable');
     return;
   }
   try {
@@ -99,7 +118,7 @@ async function startFirebaseSync() {
     firebaseSyncRoot = root;
     const auth = firebase.auth();
     firebaseAuthPersistenceReady = configureFirebaseAuthPersistence(auth);
-    subscribeElectionBallots(root);
+    startElectionBallotSubscription(root);
     auth.onAuthStateChanged((user) => {
       firebaseAuthUser = user || null;
       firebaseAdminPermission = user ? 'ADMIN WRITE' : 'READ ONLY';
@@ -109,7 +128,7 @@ async function startFirebaseSync() {
     database.ref('.info/connected').on('value', (snapshot) => {
       const connected = snapshot.val() === true;
       console.info(`[Firebase] connected ${connected}`);
-      setFirebaseConnectionState(connected ? 'LIVE' : 'OFFLINE', connected ? '' : 'Realtime Database disconnected');
+      setFirebaseConnectionState(connected);
     }, (error) => { console.error('[Firebase] connected status error', error?.code, error?.message); });
     const nativeSet = Storage.prototype.setItem;
     const nativeRemove = Storage.prototype.removeItem;
@@ -167,10 +186,9 @@ async function startFirebaseSync() {
       firebaseReady = true;
       window.dispatchEvent(new Event('phanuang-firebase-sync'));
       window.setTimeout(() => { refreshRemoteViews(); console.info('[Firebase] UI rendered from remote snapshot'); }, 0);
-    }, (error) => { console.error('[Firebase] database listener error', error?.code, error?.message); setFirebaseConnectionState('OFFLINE', error); });
+    }, (error) => { console.error('[Firebase] database listener error', error?.code, error?.message); });
   } catch (error) {
     console.error('[Firebase] initialization error', error?.code, error?.message);
-    setFirebaseConnectionState('OFFLINE', error);
   }
 }
 startFirebaseSync();
@@ -1499,6 +1517,14 @@ function renderBallot() {
   $('#submitVote').addEventListener('click', submitVote);
 }
 function selectCandidate(option) { document.querySelectorAll('.ballot-option').forEach((item) => item.classList.remove('selected')); option.classList.add('selected'); selectedCandidate = option.dataset.candidate; }
+async function commitElectionVote(vote) {
+  const votes = JSON.parse(localStorage.getItem('phanuang-election-votes') || '[]');
+  if (votes.some((item) => item.electionId === vote.electionId && item.studentId === vote.studentId)) {
+    throw Object.assign(new Error('This student has already cast a ballot'), { code: 'vote/already-cast' });
+  }
+  localStorage.setItem('phanuang-election-votes', JSON.stringify([...votes, vote]));
+  return vote;
+}
 async function submitVote() {
   const error = $('#voteError');
   if (!selectedCandidate) { error.textContent = 'กรุณากากบาทเลือกผู้สมัคร 1 คนก่อนส่งบัตร'; return; }
@@ -1821,8 +1847,8 @@ function renderAdmin() {
   const host = $('#adminContent');
   const staff = JSON.parse(localStorage.getItem('phanuang-admin') || 'null');
   if (!staff) { host.innerHTML = `<div class="admin-login-shell"><div class="admin-login-visual"><small>PHUNRUEANG STAFF</small><div class="login-sigil"><i>✦</i><b>PR</b></div><h3>เบื้องหลังทุกชัยชนะ<br>คือทีมที่พร้อมเสมอ</h3><p>พื้นที่ปฏิบัติการสำหรับทีมงานคณะสีพันเรือง</p><div class="login-status"><span></span> ${STAFF_ACCOUNTS.length} STAFF ACCOUNTS READY</div></div><div class="admin-login"><div class="login-step">01 / AUTHENTICATION</div><h3>ยินดีต้อนรับกลับ</h3><p>กรอกเลขประจำตัวและรหัสผ่านเพื่อเข้าสู่ศูนย์บัญชาการ</p><form id="adminLoginForm"><div class="field"><label>Username / เลขประจำตัว</label><div class="admin-input"><span>◉</span><input id="adminStudentId" required inputmode="numeric" autocomplete="username" placeholder="เช่น 44447 หรือ 69651"></div></div><div class="field"><label>รหัสผ่าน</label><div class="admin-input"><span>◆</span><input id="adminPassword" required type="password" autocomplete="current-password" placeholder="••••"></div></div><div class="error" id="adminLoginError"></div><button class="primary">เข้าสู่ COMMAND CENTER <b>→</b></button></form><small class="admin-secure-note">บัญชีผู้ดูแลเท่านั้นที่สามารถบันทึกข้อมูลส่วนกลางได้</small></div></div>`; $('#adminLoginForm').addEventListener('submit', async (event) => { event.preventDefault(); const button=$('#adminLoginForm button'), username=$('#adminStudentId').value, password=$('#adminPassword').value, account=findStaffAccount(username); if (!account) { $('#adminLoginError').textContent = 'ไม่พบเลขประจำตัวผู้ดูแล'; return; } button.disabled=true; $('#adminLoginError').textContent='กำลังยืนยันตัวตน…'; try { await signInFirebaseAdmin(account,password); localStorage.setItem('phanuang-admin', JSON.stringify({ username:account.username, name:account.name, room:account.room, role:account.role, teams:account.teams })); renderAdmin(); } catch (error) { $('#adminLoginError').textContent = `${error?.code || 'auth/unknown'}: ${error?.message || 'Firebase Authentication failed'}`; button.disabled=false; } }); return; }
-  const firebaseLive=firebaseConnectionState==='LIVE',firebaseHint=firebaseConnectionDetail||firebaseConnectionState;
-  host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'ADVISOR ACCESS':'STUDENT ADMIN ACCESS'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>ออนไลน์</span></p></div><div class="admin-live" title="Database: ${escapeAttribute(firebaseHint)} · Permission: ${firebaseAdminPermission}"><i></i> ${firebaseLive ? firebaseAdminPermission : 'DATABASE OFFLINE'}</div><button class="mini" id="adminLogout">ออกจากระบบ ↗</button></header>${firebaseLive ? (firebaseAdminPermission==='ADMIN WRITE' ? '' : `<p class="note" style="margin:12px 0 0">Database: LIVE · Admin permission: READ ONLY</p>`) : `<p class="note" style="margin:12px 0 0">Database: OFFLINE · ${escapeHTML(firebaseHint)}</p>`}<nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อ<small>ATTENDANCE</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>ประวัติเช็คชื่อ<small>HISTORY</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลกีฬา<small>SPORTS</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>สมาชิก<small>MEMBERS</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>จัดการร้านค้า<small>STORE MANAGER</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>ORDERS & CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>GALLERY</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ELECTION</small></span></button></nav><div id="adminPanel"></div></div>`;
+  const firebaseLive=firebaseConnectionState==='LIVE',firebaseOffline=firebaseConnectionState==='OFFLINE',firebaseHint=firebaseConnectionDetail||firebaseConnectionState,firebaseStatus=firebaseLive?firebaseAdminPermission:(firebaseOffline?'DATABASE OFFLINE':'DATABASE CONNECTING');
+  host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'ADVISOR ACCESS':'STUDENT ADMIN ACCESS'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>ออนไลน์</span></p></div><div class="admin-live" title="Database: ${escapeAttribute(firebaseHint)} · Permission: ${firebaseAdminPermission}"><i></i> ${firebaseStatus}</div><button class="mini" id="adminLogout">ออกจากระบบ ↗</button></header>${firebaseLive ? (firebaseAdminPermission==='ADMIN WRITE' ? '' : `<p class="note" style="margin:12px 0 0">Database: LIVE · Admin permission: READ ONLY</p>`) : firebaseOffline ? `<p class="note" style="margin:12px 0 0">Database: OFFLINE · ${escapeHTML(firebaseHint)}</p>` : `<p class="note" style="margin:12px 0 0">Database: CONNECTING · ${escapeHTML(firebaseHint)}</p>`}<nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อ<small>ATTENDANCE</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>ประวัติเช็คชื่อ<small>HISTORY</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลกีฬา<small>SPORTS</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>สมาชิก<small>MEMBERS</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>จัดการร้านค้า<small>STORE MANAGER</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>ORDERS & CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>GALLERY</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ELECTION</small></span></button></nav><div id="adminPanel"></div></div>`;
   $('#adminLogout').addEventListener('click', async () => { localStorage.removeItem('phanuang-admin'); try { await firebase.auth().signOut(); } catch (error) { console.error('[Firebase] admin sign-out error', error?.code, error); } renderAdmin(); });
   document.querySelectorAll('.admin-tab').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.admin-tab').forEach((item) => item.classList.toggle('active', item === button)); const panel = $('#adminPanel'); panel.classList.remove('panel-arrive'); void panel.offsetWidth; renderAdminPanel(button.dataset.adminTab); panel.classList.add('panel-arrive'); }));
   renderAdminPanel('attendance');
