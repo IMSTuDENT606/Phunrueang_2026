@@ -1532,7 +1532,13 @@ function selectCandidate(option) { document.querySelectorAll('.ballot-option').f
 async function commitElectionVote(vote) {
   if (!firebaseSyncRoot?.parent) throw Object.assign(new Error('Election database is unavailable'), { code: 'vote/database-unavailable' });
   const ballot = firebaseSyncRoot.parent.child('elections').child(vote.electionId).child('ballots').child(vote.studentId);
-  const result = await ballot.transaction((current) => current === null ? vote : undefined);
+  let result;
+  try {
+    result = await ballot.transaction((current) => current === null ? vote : undefined);
+  } catch (error) {
+    console.error('[Election] vote error', error?.code, error?.message || error);
+    throw error;
+  }
   if (!result.committed) throw Object.assign(new Error('This student has already cast a ballot'), { code: 'vote/already-cast' });
   return result.snapshot.val();
 }
@@ -1556,7 +1562,8 @@ async function submitVote() {
     renderBallotCasting(config, selectedCandidate);
   } catch (submissionError) {
     const duplicate = submissionError?.code === 'vote/already-cast';
-    error.textContent = duplicate ? 'เลขประจำตัวนี้ใช้สิทธิ์ไปแล้ว' : 'บันทึกบัตรไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่';
+    const permissionDenied = submissionError?.code === 'PERMISSION_DENIED' || submissionError?.code === 'permission_denied';
+    error.textContent = duplicate ? 'เลขประจำตัวนี้ใช้สิทธิ์ไปแล้ว' : permissionDenied ? 'ระบบเลือกตั้งยังไม่ได้รับสิทธิ์บันทึกคะแนนใน Firebase' : 'บันทึกบัตรไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่';
     button.disabled = false;
     button.innerHTML = 'พับบัตรและหย่อนลงหีบ <b>→</b>';
   } finally {
@@ -1663,7 +1670,13 @@ function getElectionStudents() {
 function findElectionStudent(studentId) { return getElectionStudents().find((student) => student.studentId === studentId); }
 function isStudentEligible(student, config) { const override = config.studentOverrides.find((item) => item.studentId === student.studentId); if (override) return override.allowed; return config.grades.includes(student.grade) && (!config.rooms.length || config.rooms.includes(student.room)); }
 function getElectionStudent() { return JSON.parse(sessionStorage.getItem('phanuang-election-student') || 'null'); }
-function getVotes() { const electionId = getElectionConfig().electionId; const votes = electionVotesRuntime === null ? JSON.parse(localStorage.getItem('phanuang-election-votes') || '[]') : electionVotesRuntime; return votes.filter((vote) => vote.electionId === electionId); }
+function getVotes() {
+  const electionId = getElectionConfig().electionId;
+  let legacyVotes = [];
+  try { legacyVotes = JSON.parse(localStorage.getItem('phanuang-election-votes') || '[]'); } catch (_) {}
+  const votes = [...legacyVotes, ...(electionVotesRuntime || [])];
+  return votes.filter((vote) => vote.electionId === electionId).filter((vote, index, all) => all.findIndex((item) => item.studentId === vote.studentId) === index);
+}
 function getCurrentStudentVote() { const config = getElectionConfig(); const localVote = JSON.parse(localStorage.getItem('phanuang-vote') || 'null'); return localVote?.electionId === config.electionId ? localVote : null; }
 function getResultTime(config) { return new Date(config.close).getTime() + Math.max(0, Number(config.countMinutes) || 0) * 60000; }
 function formatThaiDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }); }
