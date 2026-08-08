@@ -5,6 +5,17 @@
         "state": {
           ".read": true,
           ".write": "auth != null"
+        },
+        "elections": {
+          "$electionId": {
+            "ballots": {
+              ".read": true,
+              "$studentId": {
+                ".write": "auth != null || !data.exists()",
+                ".validate": "newData.hasChildren(['electionId', 'studentId', 'room', 'candidate', 'time']) && newData.child('electionId').val() === $electionId && newData.child('studentId').val() === $studentId && newData.child('room').isString() && newData.child('candidate').isString() && newData.child('time').isNumber()"
+              }
+            }
+          }
         }
       }
     }

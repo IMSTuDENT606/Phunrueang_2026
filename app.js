@@ -8,7 +8,7 @@ let classroomAnimationObserver = null;
  * is mirrored to Firebase and changes made by another device update this local cache.
  */
 const FIREBASE_SHARED_KEYS = new Set([
-  'phanuang-committee-members', 'phanuang-election-config', 'phanuang-election-votes',
+  'phanuang-committee-members', 'phanuang-election-config',
   'phanuang-access-directory',
   'phanuang-store-products', 'phanuang-store-lookbook-config', 'phanuang-orders',
   'phanuang-gallery', 'phanuang-attendance-sessions', 'phanuang-attendance-records',
@@ -28,6 +28,8 @@ let firebaseAuthPersistenceReady = Promise.resolve();
 const firebaseMemoryStorage = new Map();
 let electionVotesRuntime = null;
 let electionVoteSubmitting = false;
+let electionBallotsRoot = null;
+let electionBallotsListener = null;
 function setFirebaseConnectionState(connected) {
   firebaseConnectionState = connected ? 'LIVE' : 'OFFLINE';
   firebaseConnectionDetail = connected ? '' : 'Realtime Database disconnected';
@@ -36,10 +38,20 @@ function setFirebaseConnectionState(connected) {
   if (document.querySelector('.page.active')?.id === 'admin') window.setTimeout(renderAdmin, 0);
 }
 
-// Election votes are mirrored by the shared root listener below. Keep this global
-// hook for pages that load Election independently, without coupling it to Firebase status.
 function subscribeElectionBallots(root) {
   if (!root?.child) throw new Error('Firebase sync root is unavailable');
+  if (electionBallotsRoot && electionBallotsListener) electionBallotsRoot.off('value', electionBallotsListener);
+  electionBallotsRoot = root.parent.child('elections');
+  electionBallotsListener = (snapshot) => {
+    const elections = snapshot.val() || {};
+    electionVotesRuntime = Object.entries(elections).flatMap(([electionId, election]) => Object.values(election?.ballots || {}).map((vote) => ({ ...vote, electionId: vote.electionId || electionId })));
+    console.info('[Election] ballots synchronized', { count: electionVotesRuntime.length });
+    const active = document.querySelector('.page.active')?.id;
+    if (active === 'admin') window.setTimeout(renderAdmin, 0);
+  };
+  electionBallotsRoot.on('value', electionBallotsListener, (error) => {
+    console.error('[Election] subscribe error', error?.code, error?.message || error);
+  });
 }
 window.subscribeElectionBallots = subscribeElectionBallots;
 
@@ -1518,12 +1530,11 @@ function renderBallot() {
 }
 function selectCandidate(option) { document.querySelectorAll('.ballot-option').forEach((item) => item.classList.remove('selected')); option.classList.add('selected'); selectedCandidate = option.dataset.candidate; }
 async function commitElectionVote(vote) {
-  const votes = JSON.parse(localStorage.getItem('phanuang-election-votes') || '[]');
-  if (votes.some((item) => item.electionId === vote.electionId && item.studentId === vote.studentId)) {
-    throw Object.assign(new Error('This student has already cast a ballot'), { code: 'vote/already-cast' });
-  }
-  localStorage.setItem('phanuang-election-votes', JSON.stringify([...votes, vote]));
-  return vote;
+  if (!firebaseSyncRoot?.parent) throw Object.assign(new Error('Election database is unavailable'), { code: 'vote/database-unavailable' });
+  const ballot = firebaseSyncRoot.parent.child('elections').child(vote.electionId).child('ballots').child(vote.studentId);
+  const result = await ballot.transaction((current) => current === null ? vote : undefined);
+  if (!result.committed) throw Object.assign(new Error('This student has already cast a ballot'), { code: 'vote/already-cast' });
+  return result.snapshot.val();
 }
 async function submitVote() {
   const error = $('#voteError');
@@ -1652,7 +1663,7 @@ function getElectionStudents() {
 function findElectionStudent(studentId) { return getElectionStudents().find((student) => student.studentId === studentId); }
 function isStudentEligible(student, config) { const override = config.studentOverrides.find((item) => item.studentId === student.studentId); if (override) return override.allowed; return config.grades.includes(student.grade) && (!config.rooms.length || config.rooms.includes(student.room)); }
 function getElectionStudent() { return JSON.parse(sessionStorage.getItem('phanuang-election-student') || 'null'); }
-function getVotes() { const electionId = getElectionConfig().electionId; return JSON.parse(localStorage.getItem('phanuang-election-votes') || '[]').filter((vote) => vote.electionId === electionId); }
+function getVotes() { const electionId = getElectionConfig().electionId; const votes = electionVotesRuntime === null ? JSON.parse(localStorage.getItem('phanuang-election-votes') || '[]') : electionVotesRuntime; return votes.filter((vote) => vote.electionId === electionId); }
 function getCurrentStudentVote() { const config = getElectionConfig(); const localVote = JSON.parse(localStorage.getItem('phanuang-vote') || 'null'); return localVote?.electionId === config.electionId ? localVote : null; }
 function getResultTime(config) { return new Date(config.close).getTime() + Math.max(0, Number(config.countMinutes) || 0) * 60000; }
 function formatThaiDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }); }
@@ -2076,9 +2087,11 @@ function saveElectionAdmin() {
 }
 function resetElectionCycle() {
   const config = getElectionConfig();
+  const previousElectionId = config.electionId;
   config.electionId = `election-${Date.now()}`;
   localStorage.setItem('phanuang-election-config', JSON.stringify(config));
-  localStorage.removeItem('phanuang-election-votes');
+  electionVotesRuntime = (electionVotesRuntime || []).filter((vote) => vote.electionId !== previousElectionId);
+  if (firebaseSyncRoot?.parent && firebaseAuthUser) firebaseSyncRoot.parent.child('elections').child(previousElectionId).remove().catch((error) => console.error('[Election] reset error', error?.code, error?.message));
   localStorage.removeItem('phanuang-vote');
   sessionStorage.removeItem('phanuang-election-student');
   selectedCandidate = null;
