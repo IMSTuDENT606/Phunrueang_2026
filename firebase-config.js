@@ -21,3 +21,9 @@ window.FIREBASE_SITE_ID = "phanuang";
  * Example: username 44447 signs in as 44447@phunrueang.admin.
  */
 window.FIREBASE_ADMIN_EMAIL_DOMAIN = "phunrueang.admin";
+
+console.info('[Firebase] config loaded', {
+  projectId: window.FIREBASE_CONFIG.projectId,
+  databaseURL: window.FIREBASE_CONFIG.databaseURL,
+  siteId: window.FIREBASE_SITE_ID
+});

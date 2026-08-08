@@ -21,14 +21,16 @@ let firebaseApplyingRemote = false;
 let firebaseReadSnapshotReceived = false;
 let firebaseAuthUser = null;
 let firebaseSyncRoot = null;
-let firebaseConnectionState = 'กำลังเตรียมการเชื่อมต่อ Firebase';
+let firebaseConnectionState = 'OFFLINE';
 let firebaseConnectionDetail = '';
-const firebasePendingWrites = new Map();
+let firebaseAdminPermission = 'READ ONLY';
+let firebaseAuthPersistenceReady = Promise.resolve();
+const firebaseMemoryStorage = new Map();
 function setFirebaseConnectionState(state, error = '') {
   firebaseConnectionState = state;
   firebaseConnectionDetail = error?.code || error?.message || String(error || '');
-  document.documentElement.dataset.firebaseState = state === 'เชื่อมต่อแล้ว' ? 'connected' : 'error';
-  console[state === 'เชื่อมต่อแล้ว' ? 'info' : 'warn'](`[Firebase] ${state}`, error);
+  document.documentElement.dataset.firebaseState = state === 'LIVE' ? 'connected' : 'offline';
+  console[state === 'LIVE' ? 'info' : 'warn'](`[Firebase] database ${state}`, error);
   if (document.querySelector('.page.active')?.id === 'admin') window.setTimeout(renderAdmin, 0);
 }
 function firebaseConfigured(config) {
@@ -43,44 +45,93 @@ function refreshRemoteViews() {
   if (active === 'sports') renderSportsPage();
   if (active === 'admin') renderAdmin();
 }
+async function configureFirebaseAuthPersistence(auth) {
+  const persistence = firebase.auth.Auth.Persistence;
+  try {
+    await auth.setPersistence(persistence.LOCAL);
+    console.info('[Auth] persistence local');
+    return 'LOCAL';
+  } catch (localError) {
+    console.warn('[Auth] persistence fallback', { from: 'LOCAL', to: 'SESSION', code: localError?.code, message: localError?.message });
+    try {
+      await auth.setPersistence(persistence.SESSION);
+      return 'SESSION';
+    } catch (sessionError) {
+      console.warn('[Auth] persistence fallback', { from: 'SESSION', to: 'NONE', code: sessionError?.code, message: sessionError?.message });
+      await auth.setPersistence(persistence.NONE);
+      return 'NONE';
+    }
+  }
+}
+function waitForFirebaseAuthUser(auth, expectedUid) {
+  return new Promise((resolve, reject) => {
+    let unsubscribe = () => {};
+    let settled = false;
+    const timeout = window.setTimeout(() => {
+      settled = true;
+      unsubscribe();
+      reject(Object.assign(new Error('Firebase auth state did not provide a user'), { code: 'auth/state-timeout' }));
+    }, 10000);
+    unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user || user.uid !== expectedUid) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      unsubscribe();
+      resolve(user);
+    }, (error) => { window.clearTimeout(timeout); reject(error); });
+    if (settled) unsubscribe();
+  });
+}
 async function startFirebaseSync() {
   const config = window.FIREBASE_CONFIG;
   if (!window.firebase || !firebaseConfigured(config)) {
-    setFirebaseConnectionState('ยังไม่ได้ตั้งค่า Firebase', 'Add the real Web app configuration to firebase-config.js before deploying.');
+    setFirebaseConnectionState('OFFLINE', 'Firebase config or compat SDK is unavailable');
     return;
   }
   try {
     if (!firebase.apps.length) firebase.initializeApp(config);
-    console.info('[Firebase] initialized', { projectId: config.projectId, databaseURL: config.databaseURL });
-    const root = firebase.database().ref(`sites/${window.FIREBASE_SITE_ID || 'phanuang'}/state`);
+    const siteId = String(window.FIREBASE_SITE_ID || 'phanuang');
+    console.info('[Firebase] initialized', { projectId: config.projectId, databaseURL: config.databaseURL, siteId });
+    const database = firebase.database();
+    const root = database.ref(`sites/${siteId}/state`);
     firebaseSyncRoot = root;
-    firebase.auth().onAuthStateChanged((user) => {
+    const auth = firebase.auth();
+    firebaseAuthPersistenceReady = configureFirebaseAuthPersistence(auth);
+    auth.onAuthStateChanged((user) => {
       firebaseAuthUser = user || null;
-      console.info('[Firebase] auth state', user ? { uid: user.uid, email: user.email || null } : { user: null });
-      if (user) {
-        firebasePendingWrites.forEach((operation, key) => operation.type === 'remove' ? remove(key) : write(key, operation.value));
-        firebasePendingWrites.clear();
-      }
+      firebaseAdminPermission = user ? 'ADMIN WRITE' : 'READ ONLY';
+      console.info('[Auth] auth state user UID/email', user ? { uid: user.uid, email: user.email || null } : { user: null });
       if (document.querySelector('.page.active')?.id === 'admin') window.setTimeout(renderAdmin, 0);
     });
+    database.ref('.info/connected').on('value', (snapshot) => {
+      const connected = snapshot.val() === true;
+      console.info(`[Firebase] connected ${connected}`);
+      setFirebaseConnectionState(connected ? 'LIVE' : 'OFFLINE', connected ? '' : 'Realtime Database disconnected');
+    }, (error) => { console.error('[Firebase] connected status error', error?.code, error?.message); });
     const nativeSet = Storage.prototype.setItem;
     const nativeRemove = Storage.prototype.removeItem;
+    const nativeGet = Storage.prototype.getItem;
+    const safeKeys = () => { try { return Object.keys(localStorage); } catch (error) { console.warn('[Firebase] localStorage keys unavailable', error?.name, error?.message); return [...firebaseMemoryStorage.keys()]; } };
     const write = (key, value) => {
       if (!firebaseAuthUser) { console.warn('[Firebase] write blocked: no authenticated admin', { key }); return Promise.resolve(); }
       return root.child(firebaseKey(key)).set({ value: String(value), updatedAt: firebase.database.ServerValue.TIMESTAMP })
-        .catch((error) => { firebasePendingWrites.set(key, { type: 'set', value: String(value) }); console.error('[Firebase] write error', error?.code, error); setFirebaseConnectionState('บันทึก Firebase ไม่สำเร็จ', error); });
+        .catch((error) => { console.error('[Firebase] write error', error?.code, error?.message); });
     };
     const remove = (key) => {
       if (!firebaseAuthUser) { console.warn('[Firebase] remove blocked: no authenticated admin', { key }); return Promise.resolve(); }
       return root.child(firebaseKey(key)).remove()
-        .catch((error) => { firebasePendingWrites.set(key, { type: 'remove' }); console.error('[Firebase] remove error', error?.code, error); setFirebaseConnectionState('ลบข้อมูล Firebase ไม่สำเร็จ', error); });
+        .catch((error) => { console.error('[Firebase] remove error', error?.code, error?.message); });
+    };
+    Storage.prototype.getItem = function(key) {
+      try { return nativeGet.call(this, key); }
+      catch (error) { console.warn('[Firebase] localStorage read fallback', error?.name, error?.message); return firebaseMemoryStorage.get(String(key)) || null; }
     };
     Storage.prototype.setItem = function(key, value) {
       if (this === localStorage && isFirebaseSharedKey(key) && firebaseReadSnapshotReceived && !firebaseApplyingRemote && !firebaseAuthUser) {
         console.warn('[Firebase] local write ignored: authenticated admin required', { key: String(key) });
         return;
       }
-      nativeSet.call(this, key, value);
+      try { nativeSet.call(this, key, value); } catch (error) { firebaseMemoryStorage.set(String(key), String(value)); console.warn('[Firebase] localStorage write fallback', error?.name, error?.message); }
       if (this === localStorage && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
         if (firebaseReady && firebaseAuthUser) write(key, value);
       }
@@ -90,32 +141,33 @@ async function startFirebaseSync() {
         console.warn('[Firebase] local remove ignored: authenticated admin required', { key: String(key) });
         return;
       }
-      nativeRemove.call(this, key);
+      try { nativeRemove.call(this, key); } catch (error) { firebaseMemoryStorage.delete(String(key)); console.warn('[Firebase] localStorage remove fallback', error?.name, error?.message); }
       if (this === localStorage && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
         if (firebaseReady && firebaseAuthUser) remove(key);
       }
     };
-    console.info('[Firebase] Realtime listener attached', { path: root.toString() });
+    console.info('[Firebase] database listener attached', { path: root.toString() });
     root.on('value', (snapshot) => {
       const cloud = snapshot.val() || {};
       const currentCloudKeys = new Set(Object.keys(cloud).map(decodeURIComponent));
       console.info('[Firebase] snapshot received', { exists: snapshot.exists(), keyCount: currentCloudKeys.size });
+      console.info('[Firebase] snapshot keys', [...currentCloudKeys]);
       firebaseApplyingRemote = true;
-      Object.keys(localStorage).filter(isFirebaseSharedKey).forEach((key) => { if (!currentCloudKeys.has(key)) nativeRemove.call(localStorage, key); });
-      Object.entries(cloud).forEach(([encodedKey, record]) => {
-        const key = decodeURIComponent(encodedKey);
-        if (record && typeof record.value === 'string') nativeSet.call(localStorage, key, record.value);
-      });
-      firebaseApplyingRemote = false;
+      try {
+        safeKeys().filter(isFirebaseSharedKey).forEach((key) => { if (!currentCloudKeys.has(key)) { firebaseMemoryStorage.delete(key); try { nativeRemove.call(localStorage, key); } catch (_) {} } });
+        Object.entries(cloud).forEach(([encodedKey, record]) => {
+          const key = decodeURIComponent(encodedKey);
+          if (record && typeof record.value === 'string') { firebaseMemoryStorage.set(key, record.value); try { nativeSet.call(localStorage, key, record.value); } catch (_) {} }
+        });
+      } finally { firebaseApplyingRemote = false; }
       firebaseReadSnapshotReceived = true;
       firebaseReady = true;
-      setFirebaseConnectionState('เชื่อมต่อแล้ว');
       window.dispatchEvent(new Event('phanuang-firebase-sync'));
-      window.setTimeout(refreshRemoteViews, 0);
-    }, (error) => { console.error('[Firebase] Realtime listener error', error?.code, error); setFirebaseConnectionState('เชื่อมต่อ Firebase ไม่สำเร็จ', error); });
+      window.setTimeout(() => { refreshRemoteViews(); console.info('[Firebase] UI rendered from remote snapshot'); }, 0);
+    }, (error) => { console.error('[Firebase] database listener error', error?.code, error?.message); setFirebaseConnectionState('OFFLINE', error); });
   } catch (error) {
-    console.error('[Firebase] initialization error', error?.code, error);
-    setFirebaseConnectionState('เชื่อมต่อ Firebase ไม่สำเร็จ', error);
+    console.error('[Firebase] initialization error', error?.code, error?.message);
+    setFirebaseConnectionState('OFFLINE', error);
   }
 }
 startFirebaseSync();
@@ -1673,9 +1725,17 @@ function firebaseAdminPassword(password) {
 }
 async function signInFirebaseAdmin(account, password) {
   if (!window.firebase || !firebaseConfigured(window.FIREBASE_CONFIG)) throw Object.assign(new Error('Firebase is not configured'), { code: 'firebase/not-configured' });
-  const credential = await firebase.auth().signInWithEmailAndPassword(firebaseAdminEmail(account), firebaseAdminPassword(password));
-  console.info('[Firebase] admin authenticated for write', { uid: credential.user.uid, email: credential.user.email || null });
-  return credential.user;
+  const auth = firebase.auth();
+  console.info('[Auth] login requested', { studentId: account.username, email: firebaseAdminEmail(account) });
+  try {
+    await firebaseAuthPersistenceReady;
+    const credential = await auth.signInWithEmailAndPassword(firebaseAdminEmail(account), firebaseAdminPassword(password));
+    console.info('[Auth] signIn success', { uid: credential.user.uid, email: credential.user.email || null });
+    return await waitForFirebaseAuthUser(auth, credential.user.uid);
+  } catch (error) {
+    console.error('[Auth] error code/message', error?.code, error?.message);
+    throw error;
+  }
 }
 function teacherAccountsForRooms(rooms = []) { return TEACHER_ACCOUNTS.filter((teacher) => rooms.includes(teacher.room)); }
 if (!localStorage.getItem('phanuang-access-directory') && Array.isArray(window.PHANUANG_ACCESS_DIRECTORY)) localStorage.setItem('phanuang-access-directory', JSON.stringify(window.PHANUANG_ACCESS_DIRECTORY));
@@ -1699,9 +1759,9 @@ function getAttendanceWindowStatus(config = getAttendanceConfig()) { const now =
 function renderAdmin() {
   const host = $('#adminContent');
   const staff = JSON.parse(localStorage.getItem('phanuang-admin') || 'null');
-  if (!staff) { host.innerHTML = `<div class="admin-login-shell"><div class="admin-login-visual"><small>PHUNRUEANG STAFF</small><div class="login-sigil"><i>✦</i><b>PR</b></div><h3>เบื้องหลังทุกชัยชนะ<br>คือทีมที่พร้อมเสมอ</h3><p>พื้นที่ปฏิบัติการสำหรับทีมงานคณะสีพันเรือง</p><div class="login-status"><span></span> ${STAFF_ACCOUNTS.length} STAFF ACCOUNTS READY</div></div><div class="admin-login"><div class="login-step">01 / AUTHENTICATION</div><h3>ยินดีต้อนรับกลับ</h3><p>กรอกเลขประจำตัวและรหัสผ่านเพื่อเข้าสู่ศูนย์บัญชาการ</p><form id="adminLoginForm"><div class="field"><label>Username / เลขประจำตัว</label><div class="admin-input"><span>◉</span><input id="adminStudentId" required inputmode="numeric" autocomplete="username" placeholder="เช่น 44447 หรือ 69651"></div></div><div class="field"><label>รหัสผ่าน</label><div class="admin-input"><span>◆</span><input id="adminPassword" required type="password" autocomplete="current-password" placeholder="••••"></div></div><div class="error" id="adminLoginError"></div><button class="primary">เข้าสู่ COMMAND CENTER <b>→</b></button></form><small class="admin-secure-note">บัญชีผู้ดูแลเท่านั้นที่สามารถบันทึกข้อมูลส่วนกลางได้</small></div></div>`; $('#adminLoginForm').addEventListener('submit', async (event) => { event.preventDefault(); const button=$('#adminLoginForm button'), username=$('#adminStudentId').value, password=$('#adminPassword').value, account=findStaffAccount(username); if (!account) { $('#adminLoginError').textContent = 'ไม่พบเลขประจำตัวผู้ดูแล'; return; } button.disabled=true; $('#adminLoginError').textContent='กำลังยืนยันตัวตน…'; try { await signInFirebaseAdmin(account,password); localStorage.setItem('phanuang-admin', JSON.stringify({ username:account.username, name:account.name, room:account.room, role:account.role, teams:account.teams })); renderAdmin(); } catch (error) { console.error('[Firebase] admin sign-in error', error?.code, error); $('#adminLoginError').textContent = error?.code === 'auth/invalid-credential' || error?.code === 'auth/wrong-password' ? 'รหัสผ่านไม่ถูกต้อง' : `ยืนยันตัวตนไม่สำเร็จ (${error?.code || 'unknown-error'})`; button.disabled=false; } }); return; }
-  const firebaseLive=firebaseConnectionState==='เชื่อมต่อแล้ว',firebaseHint=firebaseConnectionDetail||firebaseConnectionState;
-  host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'ADVISOR ACCESS':'STUDENT ADMIN ACCESS'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>ออนไลน์</span></p></div><div class="admin-live" title="Firebase: ${escapeAttribute(firebaseHint)}"><i></i> ${firebaseLive&&firebaseAuthUser?'FIREBASE LIVE':'FIREBASE READ ONLY'}</div><button class="mini" id="adminLogout">ออกจากระบบ ↗</button></header>${firebaseLive&&firebaseAuthUser?'':`<p class="note" style="margin:12px 0 0">${firebaseLive?'Firebase อ่านข้อมูลได้ แต่ยังไม่ได้ยืนยันตัวตนสำหรับการบันทึก':'Firebase ยังไม่พร้อม: '+escapeHTML(firebaseHint)}</p>`}<nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อ<small>ATTENDANCE</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>ประวัติเช็คชื่อ<small>HISTORY</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลกีฬา<small>SPORTS</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>สมาชิก<small>MEMBERS</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>จัดการร้านค้า<small>STORE MANAGER</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>ORDERS & CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>GALLERY</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ELECTION</small></span></button></nav><div id="adminPanel"></div></div>`;
+  if (!staff) { host.innerHTML = `<div class="admin-login-shell"><div class="admin-login-visual"><small>PHUNRUEANG STAFF</small><div class="login-sigil"><i>✦</i><b>PR</b></div><h3>เบื้องหลังทุกชัยชนะ<br>คือทีมที่พร้อมเสมอ</h3><p>พื้นที่ปฏิบัติการสำหรับทีมงานคณะสีพันเรือง</p><div class="login-status"><span></span> ${STAFF_ACCOUNTS.length} STAFF ACCOUNTS READY</div></div><div class="admin-login"><div class="login-step">01 / AUTHENTICATION</div><h3>ยินดีต้อนรับกลับ</h3><p>กรอกเลขประจำตัวและรหัสผ่านเพื่อเข้าสู่ศูนย์บัญชาการ</p><form id="adminLoginForm"><div class="field"><label>Username / เลขประจำตัว</label><div class="admin-input"><span>◉</span><input id="adminStudentId" required inputmode="numeric" autocomplete="username" placeholder="เช่น 44447 หรือ 69651"></div></div><div class="field"><label>รหัสผ่าน</label><div class="admin-input"><span>◆</span><input id="adminPassword" required type="password" autocomplete="current-password" placeholder="••••"></div></div><div class="error" id="adminLoginError"></div><button class="primary">เข้าสู่ COMMAND CENTER <b>→</b></button></form><small class="admin-secure-note">บัญชีผู้ดูแลเท่านั้นที่สามารถบันทึกข้อมูลส่วนกลางได้</small></div></div>`; $('#adminLoginForm').addEventListener('submit', async (event) => { event.preventDefault(); const button=$('#adminLoginForm button'), username=$('#adminStudentId').value, password=$('#adminPassword').value, account=findStaffAccount(username); if (!account) { $('#adminLoginError').textContent = 'ไม่พบเลขประจำตัวผู้ดูแล'; return; } button.disabled=true; $('#adminLoginError').textContent='กำลังยืนยันตัวตน…'; try { await signInFirebaseAdmin(account,password); localStorage.setItem('phanuang-admin', JSON.stringify({ username:account.username, name:account.name, room:account.room, role:account.role, teams:account.teams })); renderAdmin(); } catch (error) { $('#adminLoginError').textContent = `${error?.code || 'auth/unknown'}: ${error?.message || 'Firebase Authentication failed'}`; button.disabled=false; } }); return; }
+  const firebaseLive=firebaseConnectionState==='LIVE',firebaseHint=firebaseConnectionDetail||firebaseConnectionState;
+  host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'ADVISOR ACCESS':'STUDENT ADMIN ACCESS'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>ออนไลน์</span></p></div><div class="admin-live" title="Database: ${escapeAttribute(firebaseHint)} · Permission: ${firebaseAdminPermission}"><i></i> ${firebaseLive ? firebaseAdminPermission : 'DATABASE OFFLINE'}</div><button class="mini" id="adminLogout">ออกจากระบบ ↗</button></header>${firebaseLive ? (firebaseAdminPermission==='ADMIN WRITE' ? '' : `<p class="note" style="margin:12px 0 0">Database: LIVE · Admin permission: READ ONLY</p>`) : `<p class="note" style="margin:12px 0 0">Database: OFFLINE · ${escapeHTML(firebaseHint)}</p>`}<nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อ<small>ATTENDANCE</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>ประวัติเช็คชื่อ<small>HISTORY</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลกีฬา<small>SPORTS</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>สมาชิก<small>MEMBERS</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>จัดการร้านค้า<small>STORE MANAGER</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>ORDERS & CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>GALLERY</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ELECTION</small></span></button></nav><div id="adminPanel"></div></div>`;
   $('#adminLogout').addEventListener('click', async () => { localStorage.removeItem('phanuang-admin'); try { await firebase.auth().signOut(); } catch (error) { console.error('[Firebase] admin sign-out error', error?.code, error); } renderAdmin(); });
   document.querySelectorAll('.admin-tab').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.admin-tab').forEach((item) => item.classList.toggle('active', item === button)); const panel = $('#adminPanel'); panel.classList.remove('panel-arrive'); void panel.offsetWidth; renderAdminPanel(button.dataset.adminTab); panel.classList.add('panel-arrive'); }));
   renderAdminPanel('attendance');
