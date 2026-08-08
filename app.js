@@ -26,6 +26,18 @@ let firebaseConnectionDetail = '';
 let firebaseAdminPermission = 'READ ONLY';
 let firebaseAuthPersistenceReady = Promise.resolve();
 const firebaseMemoryStorage = new Map();
+const firebaseManualWriteKeys = new Set();
+const electionRoomSort = (a, b) => {
+  const [gradeA, roomA] = String(a).split('/').map(Number);
+  const [gradeB, roomB] = String(b).split('/').map(Number);
+  return gradeA - gradeB || roomA - roomB;
+};
+const getAllElectionRooms = () => Object.keys(CLASSROOM_DATABASE || {}).sort(electionRoomSort);
+async function saveFirebaseSharedValue(key, value) {
+  if (!firebaseReady || !firebaseSyncRoot) throw Object.assign(new Error('Firebase is not ready'), { code: 'firebase/not-ready' });
+  if (!firebaseAuthUser) throw Object.assign(new Error('Admin authentication is required'), { code: 'auth/admin-required' });
+  await firebaseSyncRoot.child(firebaseKey(key)).set({ value: String(value), updatedAt: firebase.database.ServerValue.TIMESTAMP });
+}
 function setFirebaseConnectionState(state, error = '') {
   firebaseConnectionState = state;
   firebaseConnectionDetail = error?.code || error?.message || String(error || '');
@@ -132,7 +144,7 @@ async function startFirebaseSync() {
         return;
       }
       try { nativeSet.call(this, key, value); } catch (error) { firebaseMemoryStorage.set(String(key), String(value)); console.warn('[Firebase] localStorage write fallback', error?.name, error?.message); }
-      if (this === localStorage && !firebaseApplyingRemote && isFirebaseSharedKey(key)) {
+      if (this === localStorage && !firebaseApplyingRemote && !firebaseManualWriteKeys.has(String(key)) && isFirebaseSharedKey(key)) {
         if (firebaseReady && firebaseAuthUser) write(key, value);
       }
     };
@@ -1530,7 +1542,9 @@ function startTimer(end) {
 function renderResults() {
   const config = getElectionConfig();
   const votes = getVotes();
-  const rooms = [...new Set(getElectionStudents().map((student) => `${student.grade}/${student.classroom}`))].slice(0, 6);
+  // Keep every Phunrueang classroom in the official result, including rooms with
+  // zero votes.  Do not derive this list from votes or truncate it for the UI.
+  const rooms = getAllElectionRooms();
   const totals = config.candidates.map((candidate) => ({ ...candidate, votes: votes.filter((vote) => vote.candidate === String(candidate.number)).length })).sort((a, b) => b.votes - a.votes || Number(a.number) - Number(b.number));
   $('#electionContent').innerHTML = `<div class="results-universe results-dashboard">
     <div class="result-cinematic" aria-hidden="true"><div class="cinematic-stars"></div><div class="cinematic-zodiac">♈　♉　♊　♋　♌　♍　♎　♏　♐　♑　♒　♓</div><div class="cinematic-portal"><i></i><i></i><i></i><span>✦</span></div><div class="cinematic-copy"><small>THE CELESTIAL VERDICT</small><b>บทบัญชาแห่งดวงดาว</b><em>ชะตาได้ถูกเปิดเผยแล้ว</em></div></div>
@@ -1564,7 +1578,7 @@ function resultCandidateCard(candidate, index) {
 }
 function renderRoomDashboard(rooms, config, votes, selectedRoom = rooms[0]) {
   const room = selectedRoom || rooms[0];
-  $('#resultPanel').innerHTML = `<section class="room-dashboard sacred-room-dashboard"><div class="chamber-title"><span>☾</span><div><small>THE SIX CELESTIAL CHAMBERS</small><h4>มหาสภาแห่งดวงเสียง</h4><p>เลือกกลุ่มดาวประจำห้อง เพื่อเปิดผนึกผลคะแนนและชะตาของสมาชิก</p></div><span>☽</span></div><aside class="room-selector constellation-gates">${rooms.map((item, index) => `<button class="${item === room ? 'active' : ''}" data-room-map="${item}" style="--gate-index:${index}"><i class="gate-orbit"></i><span>${['♈','♉','♊','♋','♌','♍'][index] || '✦'}</span><small>CELESTIAL CHAMBER ${String(index + 1).padStart(2,'0')}</small><b>ม.${item}</b><em>เปิดคำพยากรณ์</em></button>`).join('')}</aside><div class="room-map-host" id="roomMapHost"></div></section>`;
+  $('#resultPanel').innerHTML = `<section class="room-dashboard sacred-room-dashboard"><div class="chamber-title"><span>☾</span><div><small>THE PHUNRUEANG CELESTIAL CHAMBERS</small><h4>มหาสภาแห่งดวงเสียง</h4><p>เลือกกลุ่มดาวประจำห้อง เพื่อเปิดผนึกผลคะแนนและชะตาของสมาชิก</p></div><span>☽</span></div><aside class="room-selector constellation-gates">${rooms.map((item, index) => `<button class="${item === room ? 'active' : ''}" data-room-map="${item}" style="--gate-index:${index}"><i class="gate-orbit"></i><span>${['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'][index] || '✦'}</span><small>CELESTIAL CHAMBER ${String(index + 1).padStart(2,'0')}</small><b>ม.${item}</b><em>เปิดคำพยากรณ์</em></button>`).join('')}</aside><div class="room-map-host" id="roomMapHost"></div></section>`;
   document.querySelectorAll('[data-room-map]').forEach((button) => button.addEventListener('click', () => {
     document.querySelectorAll('[data-room-map]').forEach((item) => item.classList.toggle('active', item === button));
     renderRoomSeatMap(button.dataset.roomMap, config, votes);
@@ -1583,14 +1597,16 @@ function renderRoomSeatMap(room, config, votes) {
     return `<i class="parliament-seat ${candidate ? 'voted' : ''}" style="--seat-color:${candidate?.color || '#26324b'};--seat-angle:${angle}deg;--seat-radius:${215 + row * 68}px;--seat-delay:${index * .025}s" title="${candidate ? `คะแนนของผู้สมัครหมายเลข ${candidate.number}` : 'ยังไม่ใช้สิทธิ์'}"></i>`;
   }).join('');
   const roomIndex = Math.max(0, [...new Set(getElectionStudents().map((student) => `${student.grade}/${student.classroom}`))].indexOf(room));
-  const zodiac = ['♈','♉','♊','♋','♌','♍'][roomIndex] || '✦';
+  const zodiac = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'][roomIndex] || '✦';
   $('#roomMapHost').innerHTML = `<div class="room-revelation"><header class="room-map-head"><div class="room-sacred-seal"><i></i><span>${zodiac}</span></div><div><small>CELESTIAL CHAMBER ${String(roomIndex + 1).padStart(2,'0')} · THE ORACLE IS OPEN</small><h4>สภาดวงเสียงแห่งห้อง ม.${room}</h4><p>ทุกอัญมณีคือหนึ่งเสียงที่ถูกจารึกไว้ในวงโคจรแห่งพันเรือง</p></div><div class="turnout-orb"><strong>${roomVotes.length}</strong><span>จาก ${students.length}</span><small>ดวงเสียง</small></div></header><div class="sacred-map-frame"><i class="frame-wing left"></i><i class="frame-wing right"></i><div class="parliament-map"><div class="chamber-zodiac-ring" aria-hidden="true">♈　♉　♊　♋　♌　♍　♎　♏　♐　♑　♒　♓</div><div class="map-stars" aria-hidden="true">✦　·　✧　·　☾　·　✦　·　☽　·　✧　·　✦</div><div class="seat-orbit-line orbit-line-one"></div><div class="seat-orbit-line orbit-line-two"></div><div class="seat-orbit-line orbit-line-three"></div><div class="seat-orbits">${seats}</div><div class="speaker-oracle"><i></i><span>☉</span><b>แท่นผนึกดวงเสียง</b><small>THE SACRED BALLOT</small></div><div class="floor-sigil">✦</div></div></div><div class="room-candidate-summary sacred-tallies">${candidateCounts.map((candidate, index) => `<div style="--candidate-color:${candidate.color || '#d6a84f'}"><span class="tally-arcana">${String(index + 1).padStart(2,'0')}</span><i></i><span>ผู้สมัครหมายเลข ${escapeHTML(candidate.number)}<small>${escapeHTML(candidate.name)}</small></span><b>${candidate.votes}<small>ดวงเสียง</small></b></div>`).join('')}<div class="not-voted"><span class="tally-arcana">☾</span><i></i><span>ดวงเสียงที่ยังไม่ถูกจารึก<small>ยังไม่ใช้สิทธิ์</small></span><b>${Math.max(0, students.length - roomVotes.length)}<small>คน</small></b></div></div></div>`;
 }
 function getElectionConfig() {
   const saved = JSON.parse(localStorage.getItem('phanuang-election-config') || '{}');
-  const config = { electionId: 'election-2026-initial', enabled: false, open: '', close: '', countMinutes: 15, grades: [4, 5, 6], rooms: ['4/2', '4/3', '5/11', '5/12', '6/4', '6/5'], studentOverrides: [], candidates: [], ...saved };
-  // การตั้งค่าที่บันทึกก่อนเพิ่มห้อง ม.1 จะไม่มีชื่อห้องในรายการ จึงคงสิทธิ์ ม.1 เดิมไว้ให้ทั้งสองห้อง
-  if (config.grades.includes(1) && config.rooms.length) config.rooms = [...new Set([...config.rooms, '1/3', '1/13'])];
+  const config = { electionId: 'election-2026-initial', enabled: false, open: '', close: '', countMinutes: 15, grades: [1, 2, 3, 4, 5, 6], rooms: getAllElectionRooms(), studentOverrides: [], candidates: [], ...saved };
+  // Earlier saved configurations listed only six rooms.  Complete the directory
+  // so the admin panel and result announcement cannot silently omit a classroom.
+  config.grades = [1, 2, 3, 4, 5, 6];
+  config.rooms = [...new Set([...getAllElectionRooms(), ...(Array.isArray(config.rooms) ? config.rooms : [])])].sort(electionRoomSort);
   return config;
 }
 function getElectionStudents() {
@@ -2017,12 +2033,29 @@ function bindCandidateEditorRowImage(row) {
     reader.onload = () => { row.querySelector('img').src = reader.result; row.querySelector('.candidate-image-data').value = reader.result; }; reader.readAsDataURL(file);
   });
 }
-function saveElectionAdmin() {
+async function saveElectionAdmin() {
   const candidates = [...document.querySelectorAll('.candidate-editor-row')].map((row) => ({ number: row.querySelector('.candidate-number-input').value.trim(), name: row.querySelector('.candidate-name-input').value.trim(), vision: row.querySelector('.candidate-vision-input').value.trim(), image: row.querySelector('.candidate-image-data').value, introImageX: Number(row.querySelector('.intro-image-x').value), introImageY: Number(row.querySelector('.intro-image-y').value), introImageZoom: Number(row.querySelector('.intro-image-zoom').value), resultImageX: Number(row.querySelector('.result-image-x').value), resultImageY: Number(row.querySelector('.result-image-y').value), resultImageZoom: Number(row.querySelector('.result-image-zoom').value), color: row.querySelector('.candidate-color-input').value })).filter((candidate) => candidate.number || candidate.name);
   const config = { electionId: getElectionConfig().electionId, enabled: $('#electionEnabled').checked, open: $('#electionOpen').value, close: $('#electionClose').value, countMinutes: Math.max(0, Number($('#electionCountMinutes').value) || 0), grades: [...document.querySelectorAll('.eligible-grade:checked')].map((input) => Number(input.value)), rooms: [...document.querySelectorAll('.eligible-room:checked')].map((input) => input.value), studentOverrides: [...document.querySelectorAll('.student-override')].filter((select) => select.value).map((select) => ({ studentId: select.dataset.studentId, allowed: select.value === 'allow' })), candidates };
   const message = $('#electionAdminMessage');
   if (config.enabled && (!config.open || !config.close || new Date(config.close) <= new Date(config.open) || !candidates.length || candidates.some((candidate) => !candidate.number || !candidate.name) || new Set(candidates.map((candidate) => candidate.number)).size !== candidates.length)) { message.textContent = 'เปิดระบบไม่ได้: ตรวจเวลา ผู้สมัคร และหมายเลขไม่ให้ซ้ำกัน'; message.classList.add('error'); return; }
-  try { localStorage.setItem('phanuang-election-config', JSON.stringify(config)); message.textContent = 'บันทึกแล้ว การตั้งค่าถูกเชื่อมไปยังหน้าผู้ใช้ทันที'; message.classList.remove('error'); } catch (error) { message.textContent = 'บันทึกไม่สำเร็จ รูปภาพอาจมีขนาดใหญ่เกินพื้นที่จัดเก็บ'; message.classList.add('error'); }
+  const button = $('#saveElectionConfig');
+  button.disabled = true;
+  message.textContent = 'กำลังบันทึกและซิงก์ Firebase…';
+  message.classList.remove('error');
+  try {
+    const serialized = JSON.stringify(config);
+    firebaseManualWriteKeys.add('phanuang-election-config');
+    localStorage.setItem('phanuang-election-config', serialized);
+    await saveFirebaseSharedValue('phanuang-election-config', serialized);
+    message.textContent = `บันทึกแล้ว · เปิดสิทธิ์ครบ ${config.rooms.length} ห้อง และซิงก์ Firebase เรียบร้อย`;
+  } catch (error) {
+    console.error('[Election] save failed', error?.code, error?.message);
+    message.textContent = error?.code === 'auth/admin-required' ? 'บันทึกไม่ได้: กรุณาเข้าสู่ระบบผู้ดูแล Firebase ใหม่' : 'บันทึก Firebase ไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อและ Database Rules';
+    message.classList.add('error');
+  } finally {
+    firebaseManualWriteKeys.delete('phanuang-election-config');
+    button.disabled = false;
+  }
 }
 function resetElectionCycle() {
   const config = getElectionConfig();
