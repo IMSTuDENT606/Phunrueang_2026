@@ -5,6 +5,15 @@
         "state": {
           ".read": true,
           ".write": "auth != null"
+        },
+        "electionVotes": {
+          ".read": true,
+          "$electionId": {
+            "$studentId": {
+              ".write": "!data.exists() && newData.exists()",
+              ".validate": "newData.hasChildren(['electionId', 'studentId', 'room', 'candidate', 'time']) && newData.child('electionId').val() === $electionId && newData.child('studentId').val() === $studentId && newData.child('room').isString() && newData.child('candidate').isString() && newData.child('time').isNumber()"
+            }
+          }
         }
       }
     }

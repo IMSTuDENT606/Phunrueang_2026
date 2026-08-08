@@ -4,7 +4,7 @@
 2. เปิด **Realtime Database** และเลือกตำแหน่งฐานข้อมูล
 3. ที่ **Authentication → Sign-in method** เปิดเฉพาะ **Email/Password** แล้วสร้าง Firebase Auth user สำหรับผู้ดูแลทุกเลขประจำตัว: เลข `44447` ให้สร้างอีเมล `44447@phunrueang.admin` (รูปแบบคือ `เลขประจำตัว@FIREBASE_ADMIN_EMAIL_DOMAIN` จาก `firebase-config.js`) ส่วน Password ใน Firebase ให้ตั้งเป็น `pn_` ตามด้วยรหัสเดิมที่ผู้ใช้กรอกหน้าแอดมิน เช่น รหัสเดิม `2580` ต้องตั้ง Firebase Password เป็น `pn_2580`
 4. คัดลอกค่า Web configuration ไปแทนค่า `PASTE_...` ใน [firebase-config.js](firebase-config.js)
-5. ใน Realtime Database → Rules ให้วางเนื้อหาจาก [firebase-database.rules.json](firebase-database.rules.json) แล้ว Publish
+5. ใน Realtime Database → Rules ให้วางเนื้อหาจาก [firebase-database.rules.json](firebase-database.rules.json) แล้ว Publish (จำเป็นสำหรับระบบคะแนนแบบเรียลไทม์ใหม่ที่ `sites/phanuang/electionVotes`)
 6. Deploy ทั้ง `index.html`, `app.js`, `firebase-config.js`, `access-data.js` และไฟล์อื่น ๆ ใหม่พร้อมกัน แล้วเปิด Safari/iPhone/iPad ใหม่เพื่อรับ cache-busting version ล่าสุด
 
 ข้อมูลกลางอยู่ใต้ `sites/phanuang/state` และทุกแท็บที่เปิดเว็บอยู่จะรับการอัปเดตแบบเรียลไทม์ทันทีหลัง Firebase เริ่มทำงาน โดยไม่ต้องล็อกอินและไม่ใช้ Anonymous Authentication ข้อมูลจาก Firebase จะเขียนทับ localStorage ของเครื่องเสมอ รวมถึงเมื่อ snapshot จาก Firebase ว่าง เพื่อไม่ให้ข้อมูลเก่าในเครื่องใดเครื่องหนึ่งกลายเป็นข้อมูลกลาง
@@ -16,6 +16,8 @@
 การเขียนจากหน้าแอดมินจะทำได้เมื่อ Firebase Email/Password ยืนยันตัวตนสำเร็จเท่านั้น ตาม Rules ที่กำหนดไว้ใน `firebase-database.rules.json` ห้ามเปิด Anonymous Authentication เป็นทางเลือกสำรอง
 
 ปุ่มบันทึกการตั้งค่าเลือกตั้งจะรอการยืนยันการเขียนจาก Firebase ก่อนแสดงผลสำเร็จ หากสิทธิ์หรือการเชื่อมต่อมีปัญหา ระบบจะแสดงข้อความที่ระบุสาเหตุแทนการแจ้งว่าบันทึกสำเร็จผิดพลาด
+
+คะแนนเลือกตั้งใหม่ถูกจัดเก็บแยกเป็นรายการต่อคนที่ `sites/phanuang/electionVotes/{electionId}/{studentId}` แทน JSON ก้อนเดียวใน `state` จึงไม่มีการอัปโหลดคะแนนเก่าทั้งหมดหรือเขียนทับกันเมื่อหลายคนลงคะแนนพร้อมกัน หน้าแอดมินฟัง path นี้แบบ Realtime โดยตรง และ Console จะแสดง `[Vote] click`, `[Vote] write start`, `[Vote] write success` และ `[Admin] snapshot received` พร้อม `performanceNow` เพื่อวัดเวลาจริงของแต่ละช่วง
 
 สถานะ Database และสิทธิ์ผู้ดูแลแยกออกจากกัน: Database เป็น `LIVE/OFFLINE` จาก `/.info/connected`; Admin permission เป็น `READ ONLY/ADMIN WRITE` จาก Firebase Auth. การอ่านข้อมูลไม่ต้องรอ Admin Auth เสมอ
 
