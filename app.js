@@ -8,7 +8,7 @@ let classroomAnimationObserver = null;
  * is mirrored to Firebase and changes made by another device update this local cache.
  */
 const FIREBASE_SHARED_KEYS = new Set([
-  'phanuang-committee-members', 'phanuang-election-config',
+  'phanuang-committee-members', 'phanuang-election-config', 'phanuang-election-votes',
   'phanuang-access-directory',
   'phanuang-store-products', 'phanuang-store-lookbook-config', 'phanuang-orders',
   'phanuang-gallery', 'phanuang-attendance-sessions', 'phanuang-attendance-records',
@@ -21,50 +21,17 @@ let firebaseApplyingRemote = false;
 let firebaseReadSnapshotReceived = false;
 let firebaseAuthUser = null;
 let firebaseSyncRoot = null;
-let firebaseConnectionState = 'CONNECTING';
-let firebaseConnectionDetail = 'Awaiting Realtime Database connection';
+let firebaseConnectionState = 'OFFLINE';
+let firebaseConnectionDetail = '';
 let firebaseAdminPermission = 'READ ONLY';
 let firebaseAuthPersistenceReady = Promise.resolve();
 const firebaseMemoryStorage = new Map();
-let electionVotesRuntime = null;
-let electionVoteSubmitting = false;
-let electionBallotsRoot = null;
-let electionBallotsListener = null;
-function setFirebaseConnectionState(connected) {
-  firebaseConnectionState = connected ? 'LIVE' : 'OFFLINE';
-  firebaseConnectionDetail = connected ? '' : 'Realtime Database disconnected';
-  document.documentElement.dataset.firebaseState = connected ? 'connected' : 'offline';
-  console[connected ? 'info' : 'warn'](`[Firebase] database ${firebaseConnectionState}`);
+function setFirebaseConnectionState(state, error = '') {
+  firebaseConnectionState = state;
+  firebaseConnectionDetail = error?.code || error?.message || String(error || '');
+  document.documentElement.dataset.firebaseState = state === 'LIVE' ? 'connected' : 'offline';
+  console[state === 'LIVE' ? 'info' : 'warn'](`[Firebase] database ${state}`, error);
   if (document.querySelector('.page.active')?.id === 'admin') window.setTimeout(renderAdmin, 0);
-}
-
-function subscribeElectionBallots(root) {
-  if (!root?.child) throw new Error('Firebase sync root is unavailable');
-  if (electionBallotsRoot && electionBallotsListener) electionBallotsRoot.off('value', electionBallotsListener);
-  electionBallotsRoot = root.parent.child('elections');
-  electionBallotsListener = (snapshot) => {
-    const elections = snapshot.val() || {};
-    electionVotesRuntime = Object.entries(elections).flatMap(([electionId, election]) => Object.values(election?.ballots || {}).map((vote) => ({ ...vote, electionId: vote.electionId || electionId })));
-    console.info('[Election] ballots synchronized', { count: electionVotesRuntime.length });
-    const active = document.querySelector('.page.active')?.id;
-    if (active === 'admin') window.setTimeout(renderAdmin, 0);
-  };
-  electionBallotsRoot.on('value', electionBallotsListener, (error) => {
-    console.error('[Election] subscribe error', error?.code, error?.message || error);
-  });
-}
-window.subscribeElectionBallots = subscribeElectionBallots;
-
-function startElectionBallotSubscription(root) {
-  try {
-    if (typeof window.subscribeElectionBallots === 'function') {
-      window.subscribeElectionBallots(root);
-    } else {
-      console.warn('[Election] subscribeElectionBallots unavailable');
-    }
-  } catch (error) {
-    console.error('[Election] subscribe error', error?.code, error?.message || error);
-  }
 }
 function firebaseConfigured(config) {
   return Boolean(config && config.apiKey && config.databaseURL && config.projectId) && !Object.values(config).some((value) => String(value).includes('PASTE_YOUR_'));
@@ -118,7 +85,7 @@ function waitForFirebaseAuthUser(auth, expectedUid) {
 async function startFirebaseSync() {
   const config = window.FIREBASE_CONFIG;
   if (!window.firebase || !firebaseConfigured(config)) {
-    console.error('[Firebase] initialization error: Firebase config or compat SDK is unavailable');
+    setFirebaseConnectionState('OFFLINE', 'Firebase config or compat SDK is unavailable');
     return;
   }
   try {
@@ -130,7 +97,6 @@ async function startFirebaseSync() {
     firebaseSyncRoot = root;
     const auth = firebase.auth();
     firebaseAuthPersistenceReady = configureFirebaseAuthPersistence(auth);
-    startElectionBallotSubscription(root);
     auth.onAuthStateChanged((user) => {
       firebaseAuthUser = user || null;
       firebaseAdminPermission = user ? 'ADMIN WRITE' : 'READ ONLY';
@@ -140,7 +106,7 @@ async function startFirebaseSync() {
     database.ref('.info/connected').on('value', (snapshot) => {
       const connected = snapshot.val() === true;
       console.info(`[Firebase] connected ${connected}`);
-      setFirebaseConnectionState(connected);
+      setFirebaseConnectionState(connected ? 'LIVE' : 'OFFLINE', connected ? '' : 'Realtime Database disconnected');
     }, (error) => { console.error('[Firebase] connected status error', error?.code, error?.message); });
     const nativeSet = Storage.prototype.setItem;
     const nativeRemove = Storage.prototype.removeItem;
@@ -198,9 +164,10 @@ async function startFirebaseSync() {
       firebaseReady = true;
       window.dispatchEvent(new Event('phanuang-firebase-sync'));
       window.setTimeout(() => { refreshRemoteViews(); console.info('[Firebase] UI rendered from remote snapshot'); }, 0);
-    }, (error) => { console.error('[Firebase] database listener error', error?.code, error?.message); });
+    }, (error) => { console.error('[Firebase] database listener error', error?.code, error?.message); setFirebaseConnectionState('OFFLINE', error); });
   } catch (error) {
     console.error('[Firebase] initialization error', error?.code, error?.message);
+    setFirebaseConnectionState('OFFLINE', error);
   }
 }
 startFirebaseSync();
@@ -1529,46 +1496,17 @@ function renderBallot() {
   $('#submitVote').addEventListener('click', submitVote);
 }
 function selectCandidate(option) { document.querySelectorAll('.ballot-option').forEach((item) => item.classList.remove('selected')); option.classList.add('selected'); selectedCandidate = option.dataset.candidate; }
-async function commitElectionVote(vote) {
-  if (!firebaseSyncRoot?.parent) throw Object.assign(new Error('Election database is unavailable'), { code: 'vote/database-unavailable' });
-  const ballot = firebaseSyncRoot.parent.child('elections').child(vote.electionId).child('ballots').child(vote.studentId);
-  let result;
-  try {
-    result = await ballot.transaction((current) => current === null ? vote : undefined);
-  } catch (error) {
-    console.error('[Election] vote error', error?.code, error?.message || error);
-    throw error;
-  }
-  if (!result.committed) throw Object.assign(new Error('This student has already cast a ballot'), { code: 'vote/already-cast' });
-  return result.snapshot.val();
-}
-async function submitVote() {
-  const error = $('#voteError');
-  if (!selectedCandidate) { error.textContent = 'กรุณากากบาทเลือกผู้สมัคร 1 คนก่อนส่งบัตร'; return; }
-  if (electionVoteSubmitting) return;
+function submitVote() {
+  if (!selectedCandidate) { $('#voteError').textContent = 'กรุณากากบาทเลือกผู้สมัคร 1 คนก่อนส่งบัตร'; return; }
   const student = getElectionStudent();
   const config = getElectionConfig();
   if (!student || Date.now() >= new Date(config.close).getTime()) { renderElection(); return; }
-  if (getVotes().some((item) => item.studentId === student.studentId)) { renderElection(); return; }
-  const button = $('#submitVote');
-  electionVoteSubmitting = true;
-  button.disabled = true;
-  button.innerHTML = 'กำลังบันทึกบัตรอย่างปลอดภัย…';
-  error.textContent = 'กำลังยืนยันบัตรกับหีบกลาง โปรดอย่าปิดหรือรีเฟรชหน้านี้';
-  try {
-    const vote = await commitElectionVote({ electionId: config.electionId, studentId: student.studentId, room: `${student.grade}/${student.classroom}`, candidate: selectedCandidate, time: Date.now() });
-    electionVotesRuntime = [...(electionVotesRuntime || getVotes()), vote].filter((item, index, all) => all.findIndex((other) => other.electionId === item.electionId && other.studentId === item.studentId) === index);
-    localStorage.setItem('phanuang-vote', JSON.stringify({ electionId: config.electionId, studentId: student.studentId, candidate: selectedCandidate, time: vote.time }));
-    renderBallotCasting(config, selectedCandidate);
-  } catch (submissionError) {
-    const duplicate = submissionError?.code === 'vote/already-cast';
-    const permissionDenied = submissionError?.code === 'PERMISSION_DENIED' || submissionError?.code === 'permission_denied';
-    error.textContent = duplicate ? 'เลขประจำตัวนี้ใช้สิทธิ์ไปแล้ว' : permissionDenied ? 'ระบบเลือกตั้งยังไม่ได้รับสิทธิ์บันทึกคะแนนใน Firebase' : 'บันทึกบัตรไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่';
-    button.disabled = false;
-    button.innerHTML = 'พับบัตรและหย่อนลงหีบ <b>→</b>';
-  } finally {
-    electionVoteSubmitting = false;
-  }
+  const votes = getVotes();
+  if (votes.some((item) => item.studentId === student.studentId)) { renderElection(); return; }
+  votes.push({ electionId: config.electionId, studentId: student.studentId, room: `${student.grade}/${student.classroom}`, candidate: selectedCandidate, time: Date.now() });
+  localStorage.setItem('phanuang-election-votes', JSON.stringify(votes));
+  localStorage.setItem('phanuang-vote', JSON.stringify({ electionId: config.electionId, studentId: student.studentId, candidate: selectedCandidate, time: Date.now() }));
+  renderBallotCasting(config, selectedCandidate);
 }
 function renderBallotCasting(config, candidateNumber) {
   const candidate = config.candidates.find((item) => String(item.number) === String(candidateNumber));
@@ -1592,7 +1530,7 @@ function startTimer(end) {
 function renderResults() {
   const config = getElectionConfig();
   const votes = getVotes();
-  const rooms = getElectionResultRooms(config);
+  const rooms = [...new Set(getElectionStudents().map((student) => `${student.grade}/${student.classroom}`))].slice(0, 6);
   const totals = config.candidates.map((candidate) => ({ ...candidate, votes: votes.filter((vote) => vote.candidate === String(candidate.number)).length })).sort((a, b) => b.votes - a.votes || Number(a.number) - Number(b.number));
   $('#electionContent').innerHTML = `<div class="results-universe results-dashboard">
     <div class="result-cinematic" aria-hidden="true"><div class="cinematic-stars"></div><div class="cinematic-zodiac">♈　♉　♊　♋　♌　♍　♎　♏　♐　♑　♒　♓</div><div class="cinematic-portal"><i></i><i></i><i></i><span>✦</span></div><div class="cinematic-copy"><small>THE CELESTIAL VERDICT</small><b>บทบัญชาแห่งดวงดาว</b><em>ชะตาได้ถูกเปิดเผยแล้ว</em></div></div>
@@ -1613,7 +1551,7 @@ function renderResults() {
 }
 function renderResultOverview(totals, rooms, config, votes) {
   const maxVotes = Math.max(1, ...totals.map((item) => item.votes));
-  $('#resultPanel').innerHTML = `<section class="overview-layout"><div class="prophecy-stage"><div class="celestial-rays" aria-hidden="true"></div><div class="prophecy-title"><span>♆</span><small>THE CARDS HAVE SPOKEN</small><h4>ไพ่แห่งผลลัพธ์</h4></div><div class="result-card-deck">${totals.map((candidate, index) => resultCandidateCard(candidate, index)).join('')}</div><div class="winner-prophecy">${totals[0] ? `<span>✦ คำพยากรณ์ลำดับที่หนึ่ง ✦</span><b>${escapeHTML(totals[0].name)}</b><small>ได้รับความไว้วางใจ ${totals[0].votes} คะแนน</small>` : 'ยังไม่มีคะแนน'}</div></div><aside class="room-summary"><header><div><small>CONSTELLATION TABLE · ${rooms.length} CHAMBERS</small><h4>สรุปคะแนนรายห้อง</h4></div><span>☽</span></header><div class="summary-table" style="--candidate-count:${config.candidates.length}"><div class="summary-row summary-head"><b>ห้อง</b>${config.candidates.map((candidate) => `<span style="--candidate-color:${candidate.color || '#d6a84f'}">เบอร์ ${escapeHTML(candidate.number)}</span>`).join('')}<strong>ใช้สิทธิ์</strong></div>${rooms.map((room) => { const roomVotes = votes.filter((vote) => vote.room === room); return `<button class="summary-row" data-summary-room="${room}"><b>ม.${room}</b>${config.candidates.map((candidate) => `<span style="--candidate-color:${candidate.color || '#d6a84f'}">${roomVotes.filter((vote) => vote.candidate === String(candidate.number)).length}</span>`).join('')}<strong>${roomVotes.length}</strong></button>`; }).join('')}</div><div class="candidate-legend">${totals.map((item, index) => `<div><i style="--candidate-color:${item.color || '#d6a84f'}"></i><span>อันดับ ${index + 1} · เบอร์ ${escapeHTML(item.number)}</span><b>${item.votes}</b><progress value="${item.votes}" max="${maxVotes}"></progress></div>`).join('')}</div></aside></section>`;
+  $('#resultPanel').innerHTML = `<section class="overview-layout"><div class="prophecy-stage"><div class="celestial-rays" aria-hidden="true"></div><div class="prophecy-title"><span>♆</span><small>THE CARDS HAVE SPOKEN</small><h4>ไพ่แห่งผลลัพธ์</h4></div><div class="result-card-deck">${totals.map((candidate, index) => resultCandidateCard(candidate, index)).join('')}</div><div class="winner-prophecy">${totals[0] ? `<span>✦ คำพยากรณ์ลำดับที่หนึ่ง ✦</span><b>${escapeHTML(totals[0].name)}</b><small>ได้รับความไว้วางใจ ${totals[0].votes} คะแนน</small>` : 'ยังไม่มีคะแนน'}</div></div><aside class="room-summary"><header><div><small>CONSTELLATION TABLE</small><h4>สรุปคะแนนรายห้อง</h4></div><span>☽</span></header><div class="summary-table" style="--candidate-count:${config.candidates.length}"><div class="summary-row summary-head"><b>ห้อง</b>${config.candidates.map((candidate) => `<span style="--candidate-color:${candidate.color || '#d6a84f'}">เบอร์ ${escapeHTML(candidate.number)}</span>`).join('')}<strong>ใช้สิทธิ์</strong></div>${rooms.map((room) => { const roomVotes = votes.filter((vote) => vote.room === room); return `<button class="summary-row" data-summary-room="${room}"><b>ม.${room}</b>${config.candidates.map((candidate) => `<span style="--candidate-color:${candidate.color || '#d6a84f'}">${roomVotes.filter((vote) => vote.candidate === String(candidate.number)).length}</span>`).join('')}<strong>${roomVotes.length}</strong></button>`; }).join('')}</div><div class="candidate-legend">${totals.map((item, index) => `<div><i style="--candidate-color:${item.color || '#d6a84f'}"></i><span>อันดับ ${index + 1} · เบอร์ ${escapeHTML(item.number)}</span><b>${item.votes}</b><progress value="${item.votes}" max="${maxVotes}"></progress></div>`).join('')}</div></aside></section>`;
   document.querySelectorAll('[data-summary-room]').forEach((button) => button.addEventListener('click', () => {
     document.querySelector('[data-result-tab="rooms"]').click();
     renderRoomDashboard(rooms, config, votes, button.dataset.summaryRoom);
@@ -1626,15 +1564,14 @@ function resultCandidateCard(candidate, index) {
 }
 function renderRoomDashboard(rooms, config, votes, selectedRoom = rooms[0]) {
   const room = selectedRoom || rooms[0];
-  const zodiacSigns = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
-  $('#resultPanel').innerHTML = `<section class="room-dashboard sacred-room-dashboard"><div class="chamber-title"><span>☾</span><div><small>CELESTIAL CHAMBERS · ${rooms.length} ROOMS</small><h4>มหาสภาแห่งดวงเสียง</h4><p>เลือกกลุ่มดาวประจำห้อง เพื่อเปิดผนึกผลคะแนนและชะตาของสมาชิก</p></div><span>☽</span></div><aside class="room-selector constellation-gates" style="--room-count:${rooms.length}">${rooms.map((item, index) => `<button class="${item === room ? 'active' : ''}" data-room-map="${item}" style="--gate-index:${index}"><i class="gate-orbit"></i><span>${zodiacSigns[index] || '✦'}</span><small>CELESTIAL CHAMBER ${String(index + 1).padStart(2,'0')}</small><b>ม.${item}</b><em>เปิดคำพยากรณ์</em></button>`).join('')}</aside><div class="room-map-host" id="roomMapHost"></div></section>`;
+  $('#resultPanel').innerHTML = `<section class="room-dashboard sacred-room-dashboard"><div class="chamber-title"><span>☾</span><div><small>THE SIX CELESTIAL CHAMBERS</small><h4>มหาสภาแห่งดวงเสียง</h4><p>เลือกกลุ่มดาวประจำห้อง เพื่อเปิดผนึกผลคะแนนและชะตาของสมาชิก</p></div><span>☽</span></div><aside class="room-selector constellation-gates">${rooms.map((item, index) => `<button class="${item === room ? 'active' : ''}" data-room-map="${item}" style="--gate-index:${index}"><i class="gate-orbit"></i><span>${['♈','♉','♊','♋','♌','♍'][index] || '✦'}</span><small>CELESTIAL CHAMBER ${String(index + 1).padStart(2,'0')}</small><b>ม.${item}</b><em>เปิดคำพยากรณ์</em></button>`).join('')}</aside><div class="room-map-host" id="roomMapHost"></div></section>`;
   document.querySelectorAll('[data-room-map]').forEach((button) => button.addEventListener('click', () => {
     document.querySelectorAll('[data-room-map]').forEach((item) => item.classList.toggle('active', item === button));
-    renderRoomSeatMap(button.dataset.roomMap, config, votes, rooms);
+    renderRoomSeatMap(button.dataset.roomMap, config, votes);
   }));
-  renderRoomSeatMap(room, config, votes, rooms);
+  renderRoomSeatMap(room, config, votes);
 }
-function renderRoomSeatMap(room, config, votes, rooms = getElectionResultRooms(config)) {
+function renderRoomSeatMap(room, config, votes) {
   const students = getElectionStudents().filter((student) => `${student.grade}/${student.classroom}` === room);
   const roomVotes = votes.filter((vote) => vote.room === room);
   const candidateCounts = config.candidates.map((candidate) => ({ ...candidate, votes: roomVotes.filter((vote) => vote.candidate === String(candidate.number)).length }));
@@ -1645,8 +1582,8 @@ function renderRoomSeatMap(room, config, votes, rooms = getElectionResultRooms(c
     const row = Math.floor(index / 13);
     return `<i class="parliament-seat ${candidate ? 'voted' : ''}" style="--seat-color:${candidate?.color || '#26324b'};--seat-angle:${angle}deg;--seat-radius:${215 + row * 68}px;--seat-delay:${index * .025}s" title="${candidate ? `คะแนนของผู้สมัครหมายเลข ${candidate.number}` : 'ยังไม่ใช้สิทธิ์'}"></i>`;
   }).join('');
-  const roomIndex = Math.max(0, rooms.indexOf(room));
-  const zodiac = ['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'][roomIndex] || '✦';
+  const roomIndex = Math.max(0, [...new Set(getElectionStudents().map((student) => `${student.grade}/${student.classroom}`))].indexOf(room));
+  const zodiac = ['♈','♉','♊','♋','♌','♍'][roomIndex] || '✦';
   $('#roomMapHost').innerHTML = `<div class="room-revelation"><header class="room-map-head"><div class="room-sacred-seal"><i></i><span>${zodiac}</span></div><div><small>CELESTIAL CHAMBER ${String(roomIndex + 1).padStart(2,'0')} · THE ORACLE IS OPEN</small><h4>สภาดวงเสียงแห่งห้อง ม.${room}</h4><p>ทุกอัญมณีคือหนึ่งเสียงที่ถูกจารึกไว้ในวงโคจรแห่งพันเรือง</p></div><div class="turnout-orb"><strong>${roomVotes.length}</strong><span>จาก ${students.length}</span><small>ดวงเสียง</small></div></header><div class="sacred-map-frame"><i class="frame-wing left"></i><i class="frame-wing right"></i><div class="parliament-map"><div class="chamber-zodiac-ring" aria-hidden="true">♈　♉　♊　♋　♌　♍　♎　♏　♐　♑　♒　♓</div><div class="map-stars" aria-hidden="true">✦　·　✧　·　☾　·　✦　·　☽　·　✧　·　✦</div><div class="seat-orbit-line orbit-line-one"></div><div class="seat-orbit-line orbit-line-two"></div><div class="seat-orbit-line orbit-line-three"></div><div class="seat-orbits">${seats}</div><div class="speaker-oracle"><i></i><span>☉</span><b>แท่นผนึกดวงเสียง</b><small>THE SACRED BALLOT</small></div><div class="floor-sigil">✦</div></div></div><div class="room-candidate-summary sacred-tallies">${candidateCounts.map((candidate, index) => `<div style="--candidate-color:${candidate.color || '#d6a84f'}"><span class="tally-arcana">${String(index + 1).padStart(2,'0')}</span><i></i><span>ผู้สมัครหมายเลข ${escapeHTML(candidate.number)}<small>${escapeHTML(candidate.name)}</small></span><b>${candidate.votes}<small>ดวงเสียง</small></b></div>`).join('')}<div class="not-voted"><span class="tally-arcana">☾</span><i></i><span>ดวงเสียงที่ยังไม่ถูกจารึก<small>ยังไม่ใช้สิทธิ์</small></span><b>${Math.max(0, students.length - roomVotes.length)}<small>คน</small></b></div></div></div>`;
 }
 function getElectionConfig() {
@@ -1655,11 +1592,6 @@ function getElectionConfig() {
   // การตั้งค่าที่บันทึกก่อนเพิ่มห้อง ม.1 จะไม่มีชื่อห้องในรายการ จึงคงสิทธิ์ ม.1 เดิมไว้ให้ทั้งสองห้อง
   if (config.grades.includes(1) && config.rooms.length) config.rooms = [...new Set([...config.rooms, '1/3', '1/13'])];
   return config;
-}
-function getElectionResultRooms(config) {
-  return Object.values(CLASSROOM_DATABASE)
-    .map((classroom) => classroom.room)
-    .filter((room) => getElectionStudents().some((student) => student.room === room && isStudentEligible(student, config)));
 }
 function getElectionStudents() {
   return Object.values(CLASSROOM_DATABASE).flatMap((classroom) => {
@@ -1670,13 +1602,7 @@ function getElectionStudents() {
 function findElectionStudent(studentId) { return getElectionStudents().find((student) => student.studentId === studentId); }
 function isStudentEligible(student, config) { const override = config.studentOverrides.find((item) => item.studentId === student.studentId); if (override) return override.allowed; return config.grades.includes(student.grade) && (!config.rooms.length || config.rooms.includes(student.room)); }
 function getElectionStudent() { return JSON.parse(sessionStorage.getItem('phanuang-election-student') || 'null'); }
-function getVotes() {
-  const electionId = getElectionConfig().electionId;
-  let legacyVotes = [];
-  try { legacyVotes = JSON.parse(localStorage.getItem('phanuang-election-votes') || '[]'); } catch (_) {}
-  const votes = [...legacyVotes, ...(electionVotesRuntime || [])];
-  return votes.filter((vote) => vote.electionId === electionId).filter((vote, index, all) => all.findIndex((item) => item.studentId === vote.studentId) === index);
-}
+function getVotes() { const electionId = getElectionConfig().electionId; return JSON.parse(localStorage.getItem('phanuang-election-votes') || '[]').filter((vote) => vote.electionId === electionId); }
 function getCurrentStudentVote() { const config = getElectionConfig(); const localVote = JSON.parse(localStorage.getItem('phanuang-vote') || 'null'); return localVote?.electionId === config.electionId ? localVote : null; }
 function getResultTime(config) { return new Date(config.close).getTime() + Math.max(0, Number(config.countMinutes) || 0) * 60000; }
 function formatThaiDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }); }
@@ -1871,8 +1797,8 @@ function renderAdmin() {
   const host = $('#adminContent');
   const staff = JSON.parse(localStorage.getItem('phanuang-admin') || 'null');
   if (!staff) { host.innerHTML = `<div class="admin-login-shell"><div class="admin-login-visual"><small>PHUNRUEANG STAFF</small><div class="login-sigil"><i>✦</i><b>PR</b></div><h3>เบื้องหลังทุกชัยชนะ<br>คือทีมที่พร้อมเสมอ</h3><p>พื้นที่ปฏิบัติการสำหรับทีมงานคณะสีพันเรือง</p><div class="login-status"><span></span> ${STAFF_ACCOUNTS.length} STAFF ACCOUNTS READY</div></div><div class="admin-login"><div class="login-step">01 / AUTHENTICATION</div><h3>ยินดีต้อนรับกลับ</h3><p>กรอกเลขประจำตัวและรหัสผ่านเพื่อเข้าสู่ศูนย์บัญชาการ</p><form id="adminLoginForm"><div class="field"><label>Username / เลขประจำตัว</label><div class="admin-input"><span>◉</span><input id="adminStudentId" required inputmode="numeric" autocomplete="username" placeholder="เช่น 44447 หรือ 69651"></div></div><div class="field"><label>รหัสผ่าน</label><div class="admin-input"><span>◆</span><input id="adminPassword" required type="password" autocomplete="current-password" placeholder="••••"></div></div><div class="error" id="adminLoginError"></div><button class="primary">เข้าสู่ COMMAND CENTER <b>→</b></button></form><small class="admin-secure-note">บัญชีผู้ดูแลเท่านั้นที่สามารถบันทึกข้อมูลส่วนกลางได้</small></div></div>`; $('#adminLoginForm').addEventListener('submit', async (event) => { event.preventDefault(); const button=$('#adminLoginForm button'), username=$('#adminStudentId').value, password=$('#adminPassword').value, account=findStaffAccount(username); if (!account) { $('#adminLoginError').textContent = 'ไม่พบเลขประจำตัวผู้ดูแล'; return; } button.disabled=true; $('#adminLoginError').textContent='กำลังยืนยันตัวตน…'; try { await signInFirebaseAdmin(account,password); localStorage.setItem('phanuang-admin', JSON.stringify({ username:account.username, name:account.name, room:account.room, role:account.role, teams:account.teams })); renderAdmin(); } catch (error) { $('#adminLoginError').textContent = `${error?.code || 'auth/unknown'}: ${error?.message || 'Firebase Authentication failed'}`; button.disabled=false; } }); return; }
-  const firebaseLive=firebaseConnectionState==='LIVE',firebaseOffline=firebaseConnectionState==='OFFLINE',firebaseHint=firebaseConnectionDetail||firebaseConnectionState,firebaseStatus=firebaseLive?firebaseAdminPermission:(firebaseOffline?'DATABASE OFFLINE':'DATABASE CONNECTING');
-  host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'ADVISOR ACCESS':'STUDENT ADMIN ACCESS'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>ออนไลน์</span></p></div><div class="admin-live" title="Database: ${escapeAttribute(firebaseHint)} · Permission: ${firebaseAdminPermission}"><i></i> ${firebaseStatus}</div><button class="mini" id="adminLogout">ออกจากระบบ ↗</button></header>${firebaseLive ? (firebaseAdminPermission==='ADMIN WRITE' ? '' : `<p class="note" style="margin:12px 0 0">Database: LIVE · Admin permission: READ ONLY</p>`) : firebaseOffline ? `<p class="note" style="margin:12px 0 0">Database: OFFLINE · ${escapeHTML(firebaseHint)}</p>` : `<p class="note" style="margin:12px 0 0">Database: CONNECTING · ${escapeHTML(firebaseHint)}</p>`}<nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อ<small>ATTENDANCE</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>ประวัติเช็คชื่อ<small>HISTORY</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลกีฬา<small>SPORTS</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>สมาชิก<small>MEMBERS</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>จัดการร้านค้า<small>STORE MANAGER</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>ORDERS & CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>GALLERY</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ELECTION</small></span></button></nav><div id="adminPanel"></div></div>`;
+  const firebaseLive=firebaseConnectionState==='LIVE',firebaseHint=firebaseConnectionDetail||firebaseConnectionState;
+  host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'ADVISOR ACCESS':'STUDENT ADMIN ACCESS'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>ออนไลน์</span></p></div><div class="admin-live" title="Database: ${escapeAttribute(firebaseHint)} · Permission: ${firebaseAdminPermission}"><i></i> ${firebaseLive ? firebaseAdminPermission : 'DATABASE OFFLINE'}</div><button class="mini" id="adminLogout">ออกจากระบบ ↗</button></header>${firebaseLive ? (firebaseAdminPermission==='ADMIN WRITE' ? '' : `<p class="note" style="margin:12px 0 0">Database: LIVE · Admin permission: READ ONLY</p>`) : `<p class="note" style="margin:12px 0 0">Database: OFFLINE · ${escapeHTML(firebaseHint)}</p>`}<nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อ<small>ATTENDANCE</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>ประวัติเช็คชื่อ<small>HISTORY</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลกีฬา<small>SPORTS</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>สมาชิก<small>MEMBERS</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>จัดการร้านค้า<small>STORE MANAGER</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>ORDERS & CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>GALLERY</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ELECTION</small></span></button></nav><div id="adminPanel"></div></div>`;
   $('#adminLogout').addEventListener('click', async () => { localStorage.removeItem('phanuang-admin'); try { await firebase.auth().signOut(); } catch (error) { console.error('[Firebase] admin sign-out error', error?.code, error); } renderAdmin(); });
   document.querySelectorAll('.admin-tab').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.admin-tab').forEach((item) => item.classList.toggle('active', item === button)); const panel = $('#adminPanel'); panel.classList.remove('panel-arrive'); void panel.offsetWidth; renderAdminPanel(button.dataset.adminTab); panel.classList.add('panel-arrive'); }));
   renderAdminPanel('attendance');
@@ -2100,11 +2026,9 @@ function saveElectionAdmin() {
 }
 function resetElectionCycle() {
   const config = getElectionConfig();
-  const previousElectionId = config.electionId;
   config.electionId = `election-${Date.now()}`;
   localStorage.setItem('phanuang-election-config', JSON.stringify(config));
-  electionVotesRuntime = (electionVotesRuntime || []).filter((vote) => vote.electionId !== previousElectionId);
-  if (firebaseSyncRoot?.parent && firebaseAuthUser) firebaseSyncRoot.parent.child('elections').child(previousElectionId).remove().catch((error) => console.error('[Election] reset error', error?.code, error?.message));
+  localStorage.removeItem('phanuang-election-votes');
   localStorage.removeItem('phanuang-vote');
   sessionStorage.removeItem('phanuang-election-student');
   selectedCandidate = null;
