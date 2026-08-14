@@ -36,6 +36,7 @@ window.PHANUANG_ACCESS_ACCOUNTS = [
   {username:'46616',name:'กานดา ชำนาญหมอ',room:'6/5',role:'student-admin',teams:['สวัสดิการ|พยาบาล']},
   {username:'44464',name:'นฤกานต์ ร่มโพธิ์',room:'6/5',role:'student-admin',teams:['เหรัญญิก']},
   {username:'44322',name:'ภานุพงษ์ ระดับ',room:'6/5',role:'student-admin',teams:['ประชาสัมพันธ์']},
+  {username:'44624',name:'<นภัส ยิ้มละมัย>',room:'6/5',role:'student-admin',teams:['ADMIN']},
   {username:'69651',name:'ศิวะพัฒน์ โพธิ์ศรี',room:'6/5',role:'teacher',teams:['ครูที่ปรึกษา']},
   {username:'69652',name:'สุพิชฌาย์ นาถสิริวรโชต',room:'6/5',role:'teacher',teams:['ครูที่ปรึกษา']},
   {username:'69641',name:'ทรรศพร พิศรูป',room:'6/4',role:'teacher',teams:['ครูที่ปรึกษา']},
