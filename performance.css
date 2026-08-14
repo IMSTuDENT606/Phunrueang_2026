@@ -77,3 +77,36 @@ img {
 @supports (interpolate-size: allow-keywords) {
   html { interpolate-size: allow-keywords; }
 }
+
+/* Sports navigation stays above decorative layers and responds immediately. */
+#sports .sport-choice,
+#sports .sport-variant {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+#sports .sport-choice::before,
+#sports .sport-variant::after,
+#sports .award-chip::after,
+#sports .selected-arena::after,
+#sports .arena-big-icon::after,
+#sports .node-team.winner::after {
+  pointer-events: none;
+}
+
+/* These perpetual effects were the main source of scroll repainting. */
+#sports .sport-choice.active,
+#sports .selected-arena,
+#sports .arena-big-icon,
+#sports .flow-arrow,
+#sports .glory-medal {
+  animation: none !important;
+}
+
+#sports .sport-explorer,
+#sports .selected-arena {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 620px;
+}
