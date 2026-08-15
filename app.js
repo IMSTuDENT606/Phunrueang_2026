@@ -3,6 +3,13 @@ const pages = ['home', 'members', 'room-login', 'classroom-113', 'classroom-13',
 let selectedCandidate = null;
 let classroomAnimationObserver = null;
 
+const sitePerformanceProfile = (() => {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const constrained = connection?.saveData || (navigator.deviceMemory && navigator.deviceMemory <= 4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+  document.documentElement.classList.toggle('performance-lite', Boolean(constrained));
+  return { constrained: Boolean(constrained), connection };
+})();
+
 // Resize phone photos before storing them as Base64. The previous full-size
 // values quickly exhausted localStorage and were too large for reliable sync.
 async function prepareImageForStorage(file, options = {}) {
@@ -101,7 +108,7 @@ function refreshRemoteViews() {
   const active = document.querySelector('.page.active')?.id;
   if (active === 'members') void renderCommitteeMembers(true);
   if (active === 'election') renderElection();
-  if (active === 'shop') void renderShop();
+  if (active === 'shop') void renderShop(true);
   if (active === 'gallery') renderGalleryPage();
   if (active === 'sports') renderSportsPage();
   if (active === 'admin') renderAdmin();
@@ -673,6 +680,18 @@ function showPage(id) {
   if (id === 'shop') renderShop();
 
   pages.forEach((page) => $(`#${page}`).classList.toggle('active', page === id));
+  // Stop media and expensive compositing work belonging to pages that are no
+  // longer visible. Browsers otherwise keep decoding looping video off-screen.
+  document.querySelectorAll('.page video').forEach((video) => {
+    if (video.closest('.page')?.id === id) { if (video.autoplay && !sitePerformanceProfile.constrained) video.play().catch(() => {}); }
+    else video.pause();
+  });
+  const activePage = document.getElementById(id);
+  activePage?.querySelectorAll('img').forEach((image, index) => {
+    image.decoding = 'async';
+    if (index < 2) { image.loading = 'eager'; image.fetchPriority = 'high'; }
+    else if (!image.hasAttribute('loading')) image.loading = 'lazy';
+  });
   document.body.classList.toggle('classroom-mode', ['classroom-113', 'classroom-13', 'classroom-21', 'classroom-25', 'classroom-36', 'classroom-38', 'classroom-42', 'classroom-43', 'classroom-511', 'classroom-512', 'classroom-64', 'classroom-65'].includes(id));
   document.body.classList.toggle('classroom-113-mode', id === 'classroom-113');
   document.body.classList.toggle('classroom-13-mode', id === 'classroom-13');
@@ -1748,8 +1767,9 @@ function getStoreProducts(){ try { const saved=JSON.parse(localStorage.getItem(S
 async function saveStoreProducts(products){await Promise.all(products.map(product=>writeStoreMedia(product.id,{image:product.image||'',video:product.video||'',lookImage:product.lookImage||'',lookImages:product.lookImages||[]})));const metadata=products.map(({image,video,lookImage,lookImages,...product})=>product);localStorage.setItem(STORE_KEY,JSON.stringify(metadata));storeProductsRuntime=products;if(navigator.storage?.persist)try{await navigator.storage.persist();}catch(_){} }
 const STORE_SIZE_OPTIONS=['XXS','XS','S','M','L','XL','2XL','3XL','4XL','5XL','FREE SIZE'];
 function productVisual(product,extra=''){ return product.image?`<img src="${escapeAttribute(product.image)}" style="${mediaCropStyle(product.mediaCrops?.image)}" alt="${escapeAttribute(product.name)}">`:`<div class="merch-art ${extra}" style="--merch:${escapeAttribute(product.color||'#e8b21e')}"><span>PR</span><b>${product.category==='ของที่ระลึก'?'TOTE':'26'}</b><i>WE SHINE TOGETHER</i></div>`; }
-async function renderShop(){
+async function renderShop(force=false){
   const host=$('#shopContent'); if(!host)return;
+  if(!force&&host.dataset.shopReady==='true'&&host.childElementCount)return;
   const products=(await hydrateStoreProducts(getStoreProducts())).filter(p=>p.published!==false);
   const lookbook=await getStoreLookbook();
   const linkedLookProduct=products.find(product=>product.id===(lookbook.finishProductId||lookbook.sourceProductId)),finishLookSource=linkedLookProduct?[linkedLookProduct]:products;
@@ -1770,6 +1790,7 @@ async function renderShop(){
   $('#exploreLooks').addEventListener('click',()=>host.querySelector('[data-view-product]')?.click());
   const revealObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('store-revealed');revealObserver.unobserve(entry.target);}}),{threshold:.12});host.querySelectorAll('.store-signature,.store-product,.store-lookbook,.store-service,.store-concierge').forEach((element,index)=>{element.style.setProperty('--reveal-delay',`${index*.07}s`);revealObserver.observe(element);});
   const hero=host.querySelector('.store-hero');hero.addEventListener('pointermove',event=>{const bounds=hero.getBoundingClientRect();hero.style.setProperty('--shop-x',`${(event.clientX-bounds.left)/bounds.width-.5}`);hero.style.setProperty('--shop-y',`${(event.clientY-bounds.top)/bounds.height-.5}`);},{passive:true});
+  host.dataset.shopReady='true';
 }
 function productCard(product){return `<article class="store-product" data-search="${escapeAttribute((product.name+' '+product.category).toLowerCase())}"><button class="store-product-media" data-view-product="${escapeAttribute(product.id)}" aria-label="ดูรายละเอียด ${escapeAttribute(product.name)}">${productVisual(product)}<span class="media-hint">◉ ดูภาพ / วิดีโอ</span>${product.badge?`<strong>${escapeHTML(product.badge)}</strong>`:''}</button><div class="store-product-info"><small>${escapeHTML(product.category||'MERCHANDISE')}</small><h3>${escapeHTML(product.name)}</h3><p>${escapeHTML(product.description||'')}</p><div><span class="store-price">฿${Number(product.price).toLocaleString('th-TH')}</span>${product.comparePrice?`<del>฿${Number(product.comparePrice).toLocaleString('th-TH')}</del>`:''}<button data-view-product="${escapeAttribute(product.id)}">เลือกซื้อ <b>→</b></button></div></div></article>`;}
 function finishLookVisual(product){const slides=product.lookImages?.length?product.lookImages:product.lookImage?[product.lookImage]:[];return slides.length?`<div class="finish-look-slider" data-slide="0"><div>${slides.map((image,index)=>`<img src="${escapeAttribute(image)}" style="${mediaCropStyle(product.mediaCrops?.[`look${index}`])}" alt="Finish Look ${index+1}" ${index?'hidden':''}>`).join('')}</div>${slides.length>1?`<button type="button" data-slide-prev aria-label="ภาพก่อนหน้า">‹</button><button type="button" data-slide-next aria-label="ภาพถัดไป">›</button><span>${slides.map((_,index)=>`<i class="${index?'':'active'}"></i>`).join('')}</span>`:''}</div>`:`<div class="finish-look-demo" style="--merch:${escapeAttribute(product.color||'#e8b21e')}"><span>FINISH</span><div>PR</div><b>${escapeHTML(product.lookTitle||'YOUR LOOK')}</b><small>${escapeHTML(product.lookText||'')}</small></div>`;}
@@ -2450,9 +2471,6 @@ const optimizeImages = (root = document) => {
   });
 };
 optimizeImages();
-new MutationObserver((records) => records.forEach((record) => record.addedNodes.forEach((node) => {
-  if (node.nodeType === Node.ELEMENT_NODE) optimizeImages(node);
-}))).observe(document.body, { childList: true, subtree: true });
 
 const animationVisibilityObserver = new IntersectionObserver((entries) => {
   entries.forEach((entry) => entry.target.classList.toggle('perf-offscreen', !entry.isIntersecting));
@@ -2467,9 +2485,22 @@ const registerAnimatedRegions = (root = document) => {
   });
 };
 registerAnimatedRegions();
-new MutationObserver((records) => records.forEach((record) => record.addedNodes.forEach((node) => {
-  if (node.nodeType === Node.ELEMENT_NODE) registerAnimatedRegions(node);
-}))).observe(document.querySelector('main'), { childList: true, subtree: true });
+// DOM-heavy pages used to be scanned synchronously by two subtree observers on
+// every insertion. Batch both jobs into one idle task so navigation stays fluid.
+const pendingPerformanceRoots = new Set();
+let performanceScanScheduled = false;
+const flushPerformanceScans = () => {
+  performanceScanScheduled = false;
+  pendingPerformanceRoots.forEach((node) => { optimizeImages(node); registerAnimatedRegions(node); });
+  pendingPerformanceRoots.clear();
+};
+new MutationObserver((records) => {
+  records.forEach((record) => record.addedNodes.forEach((node) => { if (node.nodeType === Node.ELEMENT_NODE) pendingPerformanceRoots.add(node); }));
+  if (performanceScanScheduled || !pendingPerformanceRoots.size) return;
+  performanceScanScheduled = true;
+  if ('requestIdleCallback' in window) requestIdleCallback(flushPerformanceScans, { timeout: 180 });
+  else window.setTimeout(flushPerformanceScans, 32);
+}).observe(document.body, { childList: true, subtree: true });
 function renderGalleryPage() { const host = $('#galleryPageContent'); const gallery = JSON.parse(localStorage.getItem('phanuang-gallery') || '{"images":[],"driveUrl":""}'); if (!gallery.images.length) { host.innerHTML = '<div class="gallery-empty page-empty">ยังไม่มีรูปภาพกิจกรรม<br><small>พี่สตาฟสามารถเพิ่มรูปภาพได้ที่ ADMIN → รูปภาพกิจกรรม</small></div>'; return; } const sourceImages = gallery.images.slice(0, 25); const images = Array.from({ length: 25 }, (_, index) => sourceImages[index % sourceImages.length]); host.innerHTML = `<div class="moment-wall" aria-label="ผนังรูปภาพกิจกรรม">${images.map((image, index) => `<figure class="moment-tile" style="--delay:${(index % 7) * -.7}s;--duration:${8 + (index % 5) * .8}s"><img src="${image}" alt="ภาพกิจกรรม ${index + 1}"></figure>`).join('')}<div class="gallery-center"><strong>PHUNRUEANG<br>MOMENTS</strong>${gallery.driveUrl ? `<a href="${gallery.driveUrl}" target="_blank" rel="noopener">ดูรูปภาพกิจกรรม <b>→</b></a>` : '<span class="gallery-link-disabled">ดูรูปภาพกิจกรรม <b>→</b></span>'}</div></div>`; const button = host.querySelector('.gallery-center a'); if (button) { const playButtonEffect = () => { const center = button.closest('.gallery-center'); center.classList.remove('is-pressed'); void center.offsetWidth; center.classList.add('is-pressed'); window.setTimeout(() => center.classList.remove('is-pressed'), 750); }; button.addEventListener('pointerdown', playButtonEffect); button.addEventListener('click', playButtonEffect); button.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') playButtonEffect(); }); } }
 
 // Sports results — the public page and admin panel share this single local data source.

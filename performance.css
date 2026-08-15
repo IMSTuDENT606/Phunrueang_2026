@@ -1,6 +1,17 @@
 /* Rendering optimizations — preserve the complete visual design. */
 .page { contain: style; }
 
+/* Hidden scenes can be removed from layout/paint entirely. This also prevents
+   decorative fixed layers from creating compositor work behind the active page. */
+.page:not(.active) {
+  display: none !important;
+  visibility: hidden;
+}
+
+.page.active {
+  visibility: visible;
+}
+
 /* Give each full-page scene its own paint boundary. This keeps animated
    filters and glows from invalidating the rest of the document. */
 #admin,
@@ -72,6 +83,45 @@
 
 img {
   content-visibility: auto;
+}
+
+/* Automatically selected for Save-Data and lower-memory/CPU devices. The
+   information and visual hierarchy stay intact while perpetual GPU effects are
+   removed. */
+.performance-lite .page.active *,
+.performance-lite .page.active *::before,
+.performance-lite .page.active *::after {
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+}
+
+.performance-lite .crest-burst,
+.performance-lite .sun-rays,
+.performance-lite .orbit,
+.performance-lite .spark,
+.performance-lite .olympic-aurora,
+.performance-lite .stadium-beam,
+.performance-lite .admin-aurora,
+.performance-lite .reactor-halo,
+.performance-lite .living-cosmos,
+.performance-lite .hero-energy,
+.performance-lite .store-hero-world {
+  display: none !important;
+}
+
+.performance-lite .page.active,
+.performance-lite .page.active * {
+  backdrop-filter: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  .page.active *, .page.active *::before, .page.active *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
 
 @supports (interpolate-size: allow-keywords) {
