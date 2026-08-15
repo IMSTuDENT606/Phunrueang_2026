@@ -967,7 +967,19 @@ function openRoomLogin(classroom) {
   showPage('room-login');
 }
 $('#openRoom113').addEventListener('click', () => openRoomLogin(classroom113));
-$('#openRoom13').addEventListener('click', () => openRoomLogin(classroom13));
+const room13Card = $('#openRoom13');
+room13Card.addEventListener('click', () => {
+  if (room13Card.classList.contains('is-activating')) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    openRoomLogin(classroom13);
+    return;
+  }
+  room13Card.classList.add('is-activating');
+  window.setTimeout(() => {
+    room13Card.classList.remove('is-activating');
+    openRoomLogin(classroom13);
+  }, 620);
+});
 $('#openRoom21').addEventListener('click', () => openRoomLogin(classroom21));
 $('#openRoom25').addEventListener('click', () => openRoomLogin(classroom25));
 $('#openRoom64').addEventListener('click', () => openRoomLogin(classroom64));
