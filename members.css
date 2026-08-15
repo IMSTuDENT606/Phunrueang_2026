@@ -213,8 +213,11 @@ body.classroom-mode .student-section:before{top:0;height:100%}
 #committeeMembers .committee-card:after{display:none}
 #committeeMembers .member-role-orb{position:absolute;z-index:6;right:-9px;top:-13px;display:grid;place-items:center;width:43px;height:43px;border:2px solid #fff8d0;border-radius:50%;background:radial-gradient(circle at 32% 25%,#fff3a6 0 5%,#efbd28 38%,#a86600 100%);color:#fff;box-shadow:inset 0 1px 3px #fff9c9aa,0 5px 12px #79530066,0 0 0 1px #c99216;transition:transform .5s,filter .35s}
 #committeeMembers .member-role-orb svg{width:27px;height:27px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px #79500088)}
+#committeeMembers .member-role-orb.role-volleyball svg{width:30px;height:30px;filter:drop-shadow(0 2px 2px #68400088)}
 #committeeMembers .member-role-orb text{fill:currentColor;stroke:none;font:900 9px/1 Arial,sans-serif;letter-spacing:-.4px}
 #committeeMembers .member-role-orb.role-crown-silver{background:radial-gradient(circle at 30% 23%,#fff 0 8%,#c9ced3 43%,#747b84 100%);border-color:#fff;box-shadow:inset 0 1px 3px #fff,0 5px 12px #555b6466,0 0 0 1px #9ba1a8}
+#committeeMembers .member-role-orb.is-assistant{background:radial-gradient(circle at 30% 23%,#fff 0 7%,#d9dde1 34%,#a5abb2 65%,#606871 100%);border-color:#fff;box-shadow:inset 0 1px 4px #fff,0 5px 12px #4e555e66,0 0 0 1px #969da5}
+#committeeMembers .member-role-orb.is-assistant svg{filter:drop-shadow(0 1px 1px #3f464e99)}
 #committeeMembers .member-role-orb.role-pr-tech{background:linear-gradient(145deg,#f1bd22,#8d5900);border-radius:12px;transform:rotate(3deg)}
 #committeeMembers .member-role-orb.role-pr-cute{background:radial-gradient(circle at 30% 25%,#fff,#f0c43a 48%,#a96c00);border-style:double;border-width:4px}
 #committeeMembers .member-role-orb .role-icon-detail{stroke-width:1.2}

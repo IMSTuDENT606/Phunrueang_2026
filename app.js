@@ -754,30 +754,51 @@ function showPage(id) {
 const COMMITTEE_KEY = 'phanuang-committee-members';
 const COMMITTEE_DB = 'phanuang-member-storage';
 const COMMITTEE_STORE = 'directory';
-const MEMBER_ROLES = ['ประธานคณะสี','รองประธานคณะสี','เหรัญญิก','แอดมิน / ADMIN.PR','เฮดขบวน','เฮดแสตนด์','เฮดหลีด/ดรัม/คัลเลอร์การ์ด','เฮดบาส','เฮดเซปักตะกร้อ','เฮดเปตอง','เฮดวอลเลย์บอล','เฮดฟุตซอล','เฮดฟุตบอล','เฮดแบดมินตัน','เฮดกรีฑา','เฮดกีฬาประเภทลาน','ทีมประชาสัมพันธ์','สวัสดิการ / พยาบาล','เฮดพร็อพ','สตาฟขบวน','สตาฟแสตนด์'];
+const MEMBER_ROLES = ['ประธานคณะสี','รองประธานคณะสี','เหรัญญิก','แอดมิน / ADMIN.PR','เฮดขบวน','เฮดแสตนด์','เฮดหลีด/ดรัม/คัลเลอร์การ์ด','เฮดคัตเอาท์','เฮดบาส','เฮดเซปักตะกร้อ','เฮดเปตอง','เฮดวอลเลย์บอล','เฮดฟุตซอล','เฮดฟุตบอล','เฮดแบดมินตัน','เฮดกรีฑา','เฮดกีฬาประเภทลาน','ทีมประชาสัมพันธ์','สวัสดิการ / พยาบาล','เฮดพร็อพ','สตาฟขบวน','สตาฟแสตนด์','สตาฟหลีด/ดรัม/คัลเลอร์การ์ด','สตาฟคัตเอาท์','สตาฟบาส','สตาฟเซปักตะกร้อ','สตาฟเปตอง','สตาฟวอลเลย์บอล','สตาฟฟุตซอล','สตาฟฟุตบอล','สตาฟแบดมินตัน','สตาฟกรีฑา','สตาฟกีฬาประเภทลาน','สตาฟประชาสัมพันธ์','สตาฟสวัสดิการ / พยาบาล','สตาฟพร็อพ'];
 const memberRoleIcon = (role = '') => {
   const value = String(role).toLowerCase().replace(/\s+/g, '');
+  const isAssistant = /สตาฟ|ผู้ช่วย|assistant|staff/.test(value);
   let kind = 'member';
-  if (/ทีมประชาสัมพันธ์/.test(value)) kind='pr-cute'; else if (/admin|แอดมิน|admin\.pr/.test(value)) kind='pr-tech';
-  else if (/รองประธาน/.test(value)) kind='crown-silver'; else if (/ประธาน/.test(value)) kind='crown-gold'; else if (/เหรัญญิก/.test(value)) kind='wallet';
-  else if (/เฮดขบวน/.test(value)) kind='flag'; else if (/เฮดแสตนด์/.test(value)) kind='pom'; else if (/เฮดหลีด|เฮดดรัม|คัลเลอร์การ์ด|เชียร์ลีดเดอร์/.test(value)) kind='baton';
+  if (/ประชาสัมพันธ์/.test(value)) kind='pr-cute'; else if (/admin|แอดมิน|admin\.pr/.test(value)) kind='pr-tech';
+  else if (/รองประธาน/.test(value)) kind='crown-silver'; else if (/ประธาน/.test(value)) kind='crown-gold'; else if (/เหรัญญิก/.test(value)) kind='treasure'; else if (/สวัสดิการ|พยาบาล/.test(value)) kind='first-aid';
+  else if (/ขบวน/.test(value)) kind='flag'; else if (/แสตนด์/.test(value)) kind='pom'; else if (/พร็อพ|prop/.test(value)) kind='props'; else if (/คัตเอาท์|cutout/.test(value)) kind='scissors'; else if (/หลีด|ดรัม|คัลเลอร์การ์ด|เชียร์ลีดเดอร์/.test(value)) kind='baton';
   else if (/บาส/.test(value)) kind='basketball'; else if (/เซปัก|ตะกร้อ/.test(value)) kind='takraw'; else if (/เปตอง/.test(value)) kind='petanque';
   else if (/วอลเลย์/.test(value)) kind='volleyball'; else if (/ฟุตซอล/.test(value)) kind='goal'; else if (/ฟุตบอล/.test(value)) kind='football';
   else if (/แบดมินตัน/.test(value)) kind='shuttle'; else if (/ประเภทลาน|จานร่อน|จานบิน/.test(value)) kind='discus'; else if (/กรีฑา/.test(value)) kind='runner';
   const paths = {
-    'crown-gold':'<path d="M6 17 4.5 7l5 4 4.5-7 4.5 7 5-4L22 17Z"/><path d="M7 20h14"/>','crown-silver':'<path d="M6 17 4.5 7l5 4 4.5-7 4.5 7 5-4L22 17Z"/><path d="M7 20h14"/>',
-    wallet:'<path d="M4 8.5h17v12H4z"/><path d="M4 9V6.5h14V9m1 4h4v4h-4a2 2 0 0 1 0-4Z"/>',flag:'<path d="M7 23V4m1 2c5-3 7 3 13 0v10c-6 3-8-3-13 0"/>',
-    pom:'<path d="m14 14-3 9m3-9 3 9M8 4l6 10L5 9m15-5-6 10 9-5M14 14H4m10 0h10"/><circle cx="14" cy="14" r="2"/>',baton:'<circle cx="8" cy="20" r="3"/><path d="m10 18 9-11m-2-2 4 3m-3-4 4 3"/>',
-    basketball:'<circle cx="14" cy="14" r="10"/><path d="M4 14h20M14 4c4 4 4 16 0 20M7 7c4 3 10 3 14 0M7 21c4-3 10-3 14 0"/>',takraw:'<circle cx="14" cy="14" r="10"/><path d="m14 6 4 3-1.5 5H11L9.5 9Zm-3 8-4 4m9.5-4 4.5 4M9.5 9 6 8m12-1 3-1M14 19v5"/>',
-    petanque:'<circle cx="13" cy="14" r="9"/><path d="m8 9 10 10M6 13l8 8m-4-14 10 10"/><circle cx="23" cy="6" r="2" fill="currentColor" stroke="none"/>',volleyball:'<circle cx="14" cy="14" r="10"/><path d="M14 4c2 4 2 7 0 10m0 0c-4 0-7-1-9-3m9 3c2 3 3 6 2 10m-2-10c4-1 7-3 9-6"/>',
-    goal:'<path d="M4 22V8h20v14M4 8l4-4h16v18M4 22h20M8 8v14m4-14v14m4-14v14m4-14v14M4 12h20m-20 5h20"/>',football:'<circle cx="14" cy="14" r="10"/><path d="m14 9 4 3-1.5 5h-5L10 12Zm0-5v5m4 3 5-2m-6.5 7 3 4M11.5 17l-3 4M10 12 5 10"/>',
-    shuttle:'<path d="m7 5 12 12m-9-9 5-4m-2 7 5-4M7 5l-3 8 9 9 6-5Zm10 15 3 3"/>',runner:'<circle cx="17" cy="5" r="2" fill="currentColor" stroke="none"/><path d="m14 10 4 3 4-1m-8-2-3 5-5 1m8-1-3 8m3-8 4 3 1 5"/>',
-    discus:'<ellipse cx="14" cy="14" rx="10" ry="4" transform="rotate(-18 14 14)"/><path d="M5 16c4 1 12-1 18-5"/>',member:'<path d="m14 5 1.7 5.3L21 12l-5.3 1.7L14 19l-1.7-5.3L7 12l5.3-1.7Z"/>'
+    'crown-gold':'<path class="icon-fill" d="M3.5 8.2 9 11l5-7 5 7 5.5-2.8-2.1 11.3H5.6Z"/><path class="icon-cut" d="m5.2 15.5 17.6-2.1M7 22h14"/><circle class="icon-gem" cx="14" cy="13" r="1.4"/>',
+    'crown-silver':'<path class="icon-fill" d="M3.5 8.2 9 11l5-7 5 7 5.5-2.8-2.1 11.3H5.6Z"/><path class="icon-cut" d="m5.2 15.5 17.6-2.1M7 22h14"/><circle class="icon-gem" cx="14" cy="13" r="1.4"/>',
+    treasure:'<path class="icon-fill" d="M4 12h20v11H4zM6 12V9c0-3.3 3.2-5 8-5s8 1.7 8 5v3Z"/><path class="icon-cut" d="M4 16h20M8 5.5V23m12-17.5V23M12 14h4v5h-4Z"/>',
+    'first-aid':'<rect class="icon-fill" x="3.5" y="8" width="21" height="15.5" rx="2.5"/><path class="icon-cut" d="M10 8V5h8v3"/><path class="icon-gem" d="M12 11h4v3h3v4h-3v3h-4v-3H9v-4h3Z"/>',
+    flag:'<path class="icon-fill" d="M8 5.5c5-3 8 3 14 0v11c-6 3-9-3-14 0Z"/><path d="M7 24V4"/><path class="icon-cut" d="M8 11c5-3 8 3 14 0"/>',
+    pom:'<path d="m10 18-3 6m11-6 3 6"/><path class="icon-fill" d="m14 7 3-3 .7 4.2L22 7l-2 3.8 4 2.2-4 2 2 4-4.3-1-1 4-2.7-3.2-3 3.2-.7-4L5 19l2.2-4L3 13l4-2.2L5 7l4.3 1.2L10 4Z"/><circle class="icon-cut" cx="14" cy="13" r="3.2"/>',
+    baton:'<path class="icon-fill" d="m6.2 21.5 12.9-17 2.7 2.1-13 17Z"/><circle class="icon-fill" cx="7" cy="22.5" r="3"/><path class="icon-gem" d="m20 2 1.1 2.7L24 6l-2.9 1.2L20 10l-1.2-2.8L16 6l2.8-1.3Z"/><path class="icon-cut" d="m9.5 18 3 2.3m4.8-11.5 3 2.3"/>',
+    basketball:'<circle class="icon-fill" cx="14" cy="14" r="10.5"/><path class="icon-cut" d="M3.5 14h21M14 3.5c4.2 4.4 4.2 16.6 0 21M6.5 7c4.5 3.5 10.5 3.5 15 0m-15 14c4.5-3.5 10.5-3.5 15 0"/>',
+    takraw:'<image href="assets/takraw-icon-white.png?v=1" x="1" y="1" width="26" height="26" preserveAspectRatio="xMidYMid meet"/>',
+    petanque:'<circle class="icon-fill" cx="12.5" cy="15" r="9.5"/><path class="icon-cut" d="m6.5 9.5 12 12M4.5 13l9 9m-3-15 10 10"/><circle class="icon-gem" cx="23" cy="5.5" r="2.3"/>',
+    volleyball:'<image href="assets/volleyball-icon-white.png?v=1" x="1" y="1" width="26" height="26" preserveAspectRatio="xMidYMid meet"/>',
+    goal:'<path class="icon-fill" d="M3 8h18l4 4v12H3Z"/><path class="icon-cut" d="m3 8 5-4h17v20M8 8v16m4-16v16m4-16v16m4-16v16M3 13h22M3 18.5h22"/><circle class="icon-gem" cx="18.5" cy="18" r="3.2"/>',
+    football:'<circle class="icon-fill" cx="14" cy="14" r="10.5"/><path class="icon-cut" d="m14 8.5 4.5 3.3-1.7 5.3h-5.6l-1.7-5.3Zm0-5v5m4.5 3.3 5-1.7m-6.7 7 3.1 4.3m-8.7-4.3-3.1 4.3m1.4-9.6-5-1.7"/>',
+    shuttle:'<path class="icon-fill" d="M5 4c4.8.4 8.7 2 11.5 4.8l-7.7 7.7C6 13.7 4.4 9.8 5 4Z"/><path class="icon-cut" d="m7.2 5 4 7.4M11 6.5l3 4M8.8 16.5l3 3"/><path class="icon-fill" d="m11 18.5 2.5-2.5 10 7-2 2Z"/>',
+    scissors:'<circle class="icon-fill" cx="6.5" cy="8" r="3.3"/><circle class="icon-fill" cx="6.5" cy="20" r="3.3"/><path d="m9.2 9.8 15 8.2M9.2 18.2 24.2 10"/><circle class="icon-gem" cx="13.5" cy="14" r="1.5"/>',
+    runner:'<circle class="icon-fill" cx="17.8" cy="4.8" r="2.5"/><path class="icon-fill" d="m14.2 8.2-3.5 6.1-5.4 1.8 1 3 6.8-2.2 2-3.2 2.7 2.3 5.3-.8-.5-3-3.6.4-2.5-4.3Z"/><path d="m14 16.2-1.5 3.5-4.7 4.1m6.3-7.6 4.2 2.6 1 5.2"/>',
+    discus:'<ellipse class="icon-fill" cx="14" cy="14" rx="11" ry="4.5" transform="rotate(-18 14 14)"/><path class="icon-cut" d="M4 16.7c5 1.1 13.5-1.5 20-5.4M8 12.5c3 .8 7.5.2 11-1.6"/>',
+    member:'<path class="icon-fill" d="m14 3.5 2.2 7.2 7.3 2.3-7.3 2.2-2.2 7.3-2.3-7.3L4.5 13l7.2-2.3Z"/>'
   };
+  Object.assign(paths, {
+    'crown-gold':'<path d="M6 17 4.5 7l5 4 4.5-7 4.5 7 5-4L22 17Z"/><path d="M7 20h14"/>','crown-silver':'<path d="M6 17 4.5 7l5 4 4.5-7 4.5 7 5-4L22 17Z"/><path d="M7 20h14"/>',
+    treasure:'<path d="M4 12h20v11H4zM6 12V9c0-3 3-5 8-5s8 2 8 5v3M4 16h20"/><path d="M12 14h4v5h-4zM7 19v4m14-4v4"/>','first-aid':'<rect x="4" y="8" width="20" height="15" rx="2"/><path d="M10 8V5h8v3m-6 4h4v3h3v4h-3v3h-4v-3H9v-4h3Z"/>',flag:'<path d="M7 23V4m1 2c5-3 7 3 13 0v10c-6 3-8-3-13 0"/>',props:'<path d="m6 23 11-16 4 3-11 15Z"/><path d="m15 8 3-4 5 4-3 4M5 5l18 18M4 4l4 1-3 3Z"/>',
+    pom:'<path d="m10 18-3 6m11-6 3 6"/><path d="M9 17 4 15l3-2-3-3 4-.2L7 6l4 1 1-4 2 4 3-3 .5 4L22 7l-2 4 4 2-4 2 2 4-4-.5-1 4-3-3-3 3-.5-4-4 1.5Z"/><circle cx="14" cy="14" r="3"/>',baton:'<path d="m8 22 12-16"/><circle cx="7" cy="23" r="2.5"/><path d="m20 3 .9 2.1L23 6l-2.1.9L20 9l-.9-2.1L17 6l2.1-.9Z"/><path d="m10 18 3 2m4-12 3 2"/>',
+    basketball:'<circle cx="14" cy="14" r="10"/><path d="M4 14h20M14 4c4 4 4 16 0 20M7 7c4 3 10 3 14 0M7 21c4-3 10-3 14 0"/>',takraw:'<image href="assets/takraw-icon-white.png?v=1" x="1" y="1" width="26" height="26" preserveAspectRatio="xMidYMid meet"/>',
+    petanque:'<circle cx="13" cy="14" r="9"/><path d="m8 9 10 10M6 13l8 8m-4-14 10 10"/><circle cx="23" cy="6" r="2" fill="currentColor" stroke="none"/>',volleyball:'<image href="assets/volleyball-icon-white.png?v=1" x="1" y="1" width="26" height="26" preserveAspectRatio="xMidYMid meet"/>',
+    goal:'<path d="M4 23V8h17l3 4v11M4 8l4-4h16v19H4"/><path d="M8 8v15m4-15v15m4-15v15m4-15v15M4 13h20M4 18h20"/>',football:'<circle cx="14" cy="14" r="10"/><path d="m14 9 4 3-1.5 5h-5L10 12Zm0-5v5m4 3 5-2m-6.5 7 3 4M11.5 17l-3 4M10 12 5 10"/>',
+    shuttle:'<ellipse cx="10" cy="9" rx="5" ry="6" transform="rotate(-35 10 9)"/><path d="m13.5 13.5 9 9m-6.5-6.5 3-3m-1 5 3-3"/><path d="m20 20 4 3"/>',scissors:'<circle cx="7" cy="8" r="3"/><circle cx="7" cy="20" r="3"/><path d="m9.5 9.5 14 8.5M9.5 18.5 23.5 10M13.5 14l-4-2.5"/>',runner:'<circle cx="17.5" cy="5" r="2.3" fill="currentColor" stroke="none"/><path d="m15 9-3 5-5 2m8-7 3 4 5-1m-9 3-1 4-4 4m5-8 4 3 1 5"/><path d="M3 24h7m9 0h6"/>',
+    discus:'<ellipse cx="14" cy="14" rx="10" ry="4" transform="rotate(-18 14 14)"/><path d="M5 16c4 1 12-1 18-5"/>',member:'<path d="m14 5 1.7 5.3L21 12l-5.3 1.7L14 19l-1.7-5.3L7 12l5.3-1.7Z"/>'
+  });
   let drawing=paths[kind];
   if(kind==='pr-tech') drawing='<path d="M5 20V8h6a4 4 0 0 1 0 8H5m4-4h2M16 20V8h4a3 3 0 0 1 0 6h-4m4 0 4 6"/><path class="role-icon-detail" d="M3 5h4m14 0h4M3 23h4m14 0h4"/>';
   if(kind==='pr-cute') drawing='<text x="14" y="18" text-anchor="middle">PR</text><path class="role-icon-detail" d="m5 5 .6 2L8 8l-2.4.7L5 11l-.7-2.3L2 8l2.3-.7Zm18 12 .6 2 2.4.7-2.4.7L23 23l-.7-2.6-2.3-.7 2.3-.7Z"/>';
-  return `<span class="member-role-orb role-${kind}" aria-hidden="true"><svg viewBox="0 0 28 28" focusable="false">${drawing}</svg></span>`;
+  return `<span class="member-role-orb role-${kind}${isAssistant ? ' is-assistant' : ''}" aria-hidden="true"><svg viewBox="0 0 28 28" focusable="false">${drawing}</svg></span>`;
 };
 function openCommitteeDatabase() { return new Promise((resolve, reject) => { const request = indexedDB.open(COMMITTEE_DB, 1); request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains(COMMITTEE_STORE)) request.result.createObjectStore(COMMITTEE_STORE); }; request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
 async function readCommitteeDatabase() { const database = await openCommitteeDatabase(); return new Promise((resolve, reject) => { const transaction = database.transaction(COMMITTEE_STORE, 'readonly'); const request = transaction.objectStore(COMMITTEE_STORE).get('members'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); transaction.oncomplete = () => database.close(); }); }
