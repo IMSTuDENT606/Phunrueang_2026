@@ -193,7 +193,7 @@ body.classroom-mode .student-section{width:100vw;max-width:none;margin-left:calc
 body.classroom-mode .student-section:before{top:0;height:100%}
 
 /* === PHUNRUEANG HALL OF FAME — public committee cards === */
-#committeeMembers{position:relative;margin-top:34px;padding:52px 38px 66px;border:1px solid #d6a91f55;border-radius:38px;background:radial-gradient(circle at 12% 8%,#fff4a5 0 1px,transparent 2px),radial-gradient(circle at 88% 15%,#ffd63655,transparent 24%),linear-gradient(145deg,#fffdf4 0%,#fff8d7 48%,#fffdf3 100%);background-size:48px 48px,auto,auto;box-shadow:inset 0 1px #fff,0 26px 70px #926e1521;overflow:hidden;isolation:isolate}
+#committeeMembers{position:relative;margin-top:34px;padding:52px 38px 66px;border:1px solid #d6a91f55;border-radius:38px;background:radial-gradient(circle at 12% 8%,#fff4a5 0 1px,transparent 2px),radial-gradient(circle at 88% 15%,#ffd63655,transparent 24%),linear-gradient(145deg,#fffdf4 0%,#fff8d7 48%,#fffdf3 100%);background-size:48px 48px,auto,auto;box-shadow:inset 0 1px #fff,0 26px 70px #926e1521;overflow:visible;isolation:isolate}
 #committeeMembers:before{content:"PHUNRUEANG  •  HALL OF FAME  •  WE SHINE TOGETHER";position:absolute;z-index:-1;left:-18px;top:20px;width:110%;color:#bc8b0810;font-size:clamp(54px,7vw,92px);font-weight:900;letter-spacing:-3px;line-height:.82;white-space:nowrap;transform:rotate(-3deg)}
 #committeeMembers:after{content:"✦";position:absolute;z-index:-1;right:-75px;bottom:-120px;color:#e8b91c18;font-size:360px;line-height:1}
 #committeeMembers .committee-section{position:relative;margin-top:0}
@@ -206,14 +206,22 @@ body.classroom-mode .student-section:before{top:0;height:100%}
 #committeeMembers .committee-heading small:after{content:"";width:58px;height:1px;background:#c69a21}
 #committeeMembers .committee-heading h3{font-size:clamp(34px,4.5vw,52px);line-height:1.1;letter-spacing:-1.5px;color:#29220d;text-shadow:0 2px #fff}
 #committeeMembers .committee-heading p{max-width:390px;padding:13px 17px;border:1px solid #d9b74766;border-radius:16px;background:#fffdf2b8;color:#6f6240;line-height:1.65;box-shadow:inset 0 1px #fff}
-#committeeMembers .committee-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:25px 17px;align-items:stretch}
+#committeeMembers .committee-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:25px 17px;align-items:stretch;padding-left:12px;padding-right:12px;box-sizing:border-box}
 #committeeMembers .committee-card{--card-accent:#e5b51f;--card-deep:#754d00;position:relative;border:0;border-radius:27px;background:linear-gradient(145deg,#fffef9,#fff8dc);box-shadow:0 10px 0 var(--card-accent),0 20px 35px #6c4e1528,0 0 0 1px #cda52855;overflow:visible;transform:translateY(0);transition:transform .42s cubic-bezier(.2,.8,.2,1),box-shadow .42s,filter .42s}
 #committeeMembers .committee-section:nth-child(2) .committee-card{--card-accent:#d39431;--card-deep:#643808}
 #committeeMembers .committee-card:before{content:"";position:absolute;z-index:4;inset:-5px;border:1px solid #f0c63a00;border-radius:31px;pointer-events:none;transition:border-color .35s,box-shadow .35s}
-#committeeMembers .committee-card:after{content:"✦";position:absolute;z-index:6;right:-8px;top:-12px;display:grid;place-items:center;width:34px;height:34px;border:2px solid #fff6bf;border-radius:50%;background:linear-gradient(145deg,#ffdf54,#b87900);color:#fff8cc;font-size:15px;box-shadow:0 5px 12px #79530055;transition:transform .5s}
+#committeeMembers .committee-card:after{display:none}
+#committeeMembers .member-role-orb{position:absolute;z-index:6;right:-9px;top:-13px;display:grid;place-items:center;width:43px;height:43px;border:2px solid #fff8d0;border-radius:50%;background:radial-gradient(circle at 32% 25%,#fff3a6 0 5%,#efbd28 38%,#a86600 100%);color:#fff;box-shadow:inset 0 1px 3px #fff9c9aa,0 5px 12px #79530066,0 0 0 1px #c99216;transition:transform .5s,filter .35s}
+#committeeMembers .member-role-orb svg{width:27px;height:27px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px #79500088)}
+#committeeMembers .member-role-orb text{fill:currentColor;stroke:none;font:900 9px/1 Arial,sans-serif;letter-spacing:-.4px}
+#committeeMembers .member-role-orb.role-crown-silver{background:radial-gradient(circle at 30% 23%,#fff 0 8%,#c9ced3 43%,#747b84 100%);border-color:#fff;box-shadow:inset 0 1px 3px #fff,0 5px 12px #555b6466,0 0 0 1px #9ba1a8}
+#committeeMembers .member-role-orb.role-pr-tech{background:linear-gradient(145deg,#f1bd22,#8d5900);border-radius:12px;transform:rotate(3deg)}
+#committeeMembers .member-role-orb.role-pr-cute{background:radial-gradient(circle at 30% 25%,#fff,#f0c43a 48%,#a96c00);border-style:double;border-width:4px}
+#committeeMembers .member-role-orb .role-icon-detail{stroke-width:1.2}
 #committeeMembers .committee-card:hover{z-index:5;transform:translateY(-13px) scale(1.025);filter:saturate(1.08);box-shadow:0 14px 0 var(--card-accent),0 32px 48px #6c4e1540,0 0 34px #ffcf3566}
 #committeeMembers .committee-card:hover:before{border-color:#e6b91d88;box-shadow:0 0 26px #f3c52d55}
-#committeeMembers .committee-card:hover:after{transform:rotate(135deg) scale(1.14)}
+#committeeMembers .committee-card:hover .member-role-orb{transform:rotate(8deg) scale(1.13);filter:brightness(1.08)}
+#committeeMembers .committee-card:hover .member-role-orb.role-pr-tech{transform:rotate(-3deg) scale(1.13)}
 #committeeMembers .committee-photo{aspect-ratio:4/5.25;border-radius:27px 27px 0 0;background:radial-gradient(circle at 50% 32%,#ffe57c,#d49a0b 57%,#644000);box-shadow:inset 0 0 0 1px #fff5ae88;isolation:isolate}
 #committeeMembers .committee-photo:before{content:"";position:absolute;z-index:2;inset:0;background:linear-gradient(115deg,transparent 15%,#fff8b900 36%,#fff8b94f 46%,#fff8b900 57%);transform:translateX(-130%);transition:transform .8s ease}
 #committeeMembers .committee-card:hover .committee-photo:before{transform:translateX(130%)}
@@ -231,8 +239,9 @@ body.classroom-mode .student-section:before{top:0;height:100%}
 #committeeMembers .committee-info p strong{color:var(--card-deep);font-size:16px}
 #committeeMembers .leaders-empty{border:1px dashed #cba72f;border-radius:25px;background:#fffdf2aa;box-shadow:none}
 @media(max-width:1080px){#committeeMembers{padding:42px 28px 55px}#committeeMembers .committee-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:27px 20px}}
-@media(max-width:720px){#committeeMembers{margin-left:-8px;margin-right:-8px;padding:34px 15px 45px;border-radius:27px}#committeeMembers .committee-section+.committee-section{margin-top:65px;padding-top:55px}#committeeMembers .committee-heading{align-items:flex-start;gap:15px}#committeeMembers .committee-heading p{max-width:none}#committeeMembers .committee-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:23px 12px}#committeeMembers .committee-card:hover{transform:translateY(-7px)}#committeeMembers .committee-info{min-height:143px;padding:18px 12px 21px}#committeeMembers .committee-info small{font-size:12px;padding:4px 7px}#committeeMembers .committee-info h4{font-size:17px}#committeeMembers .committee-info p,#committeeMembers .committee-info p strong{font-size:13px}#committeeMembers .committee-photo>b{font-size:31px}}
-@media(prefers-reduced-motion:reduce){#committeeMembers .committee-card,#committeeMembers .committee-card:after,#committeeMembers .committee-photo:before,#committeeMembers .committee-photo img{transition:none}}
+@media(max-width:720px){#committeeMembers{margin-left:-8px;margin-right:-8px;padding:34px 15px 45px;border-radius:27px}#committeeMembers .committee-section+.committee-section{margin-top:65px;padding-top:55px}#committeeMembers .committee-heading{align-items:flex-start;gap:15px}#committeeMembers .committee-heading p{max-width:none}#committeeMembers .committee-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:23px 12px;padding-left:14px;padding-right:14px}#committeeMembers .committee-card:hover{transform:translateY(-7px)}#committeeMembers .committee-info{min-height:143px;padding:18px 12px 21px}#committeeMembers .committee-info small{font-size:12px;padding:4px 7px}#committeeMembers .committee-info h4{font-size:17px}#committeeMembers .committee-info p,#committeeMembers .committee-info p strong{font-size:13px}#committeeMembers .committee-photo>b{font-size:31px}}
+@media(max-width:720px){#committeeMembers .member-role-orb{right:8px;top:8px;width:40px;height:40px;border-width:2px;box-shadow:inset 0 1px 3px #fff9c9aa,0 4px 10px #49300066,0 0 0 1px #c99216}#committeeMembers .member-role-orb svg{width:25px;height:25px}}
+@media(prefers-reduced-motion:reduce){#committeeMembers .committee-card,#committeeMembers .member-role-orb,#committeeMembers .committee-photo:before,#committeeMembers .committee-photo img{transition:none}}
 
 /* Students and teachers share the same five-card grid. Portraits never affect track sizing. */
 #committeeMembers .committee-grid{grid-template-columns:repeat(5,minmax(0,1fr));justify-content:stretch}

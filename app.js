@@ -754,7 +754,31 @@ function showPage(id) {
 const COMMITTEE_KEY = 'phanuang-committee-members';
 const COMMITTEE_DB = 'phanuang-member-storage';
 const COMMITTEE_STORE = 'directory';
-const MEMBER_ROLES = ['ประธานสี','รองประธานสี','เหรัญญิก','เฮดขบวน','เฮดเชียร์ลีดเดอร์','เฮดแสตนด์','เฮดเปตอง','เฮดฟุตบอล','เฮดวอลเลย์บอล','เฮดแบดมินตัน','เฮดบาสเกตบอล','เฮดกรีฑา','สวัสดิการ / พยาบาล','เฮดพร็อพ','สตาฟขบวน','สตาฟแสตนด์'];
+const MEMBER_ROLES = ['ประธานคณะสี','รองประธานคณะสี','เหรัญญิก','แอดมิน / ADMIN.PR','เฮดขบวน','เฮดแสตนด์','เฮดหลีด/ดรัม/คัลเลอร์การ์ด','เฮดบาส','เฮดเซปักตะกร้อ','เฮดเปตอง','เฮดวอลเลย์บอล','เฮดฟุตซอล','เฮดฟุตบอล','เฮดแบดมินตัน','เฮดกรีฑา','เฮดกีฬาประเภทลาน','ทีมประชาสัมพันธ์','สวัสดิการ / พยาบาล','เฮดพร็อพ','สตาฟขบวน','สตาฟแสตนด์'];
+const memberRoleIcon = (role = '') => {
+  const value = String(role).toLowerCase().replace(/\s+/g, '');
+  let kind = 'member';
+  if (/ทีมประชาสัมพันธ์/.test(value)) kind='pr-cute'; else if (/admin|แอดมิน|admin\.pr/.test(value)) kind='pr-tech';
+  else if (/รองประธาน/.test(value)) kind='crown-silver'; else if (/ประธาน/.test(value)) kind='crown-gold'; else if (/เหรัญญิก/.test(value)) kind='wallet';
+  else if (/เฮดขบวน/.test(value)) kind='flag'; else if (/เฮดแสตนด์/.test(value)) kind='pom'; else if (/เฮดหลีด|เฮดดรัม|คัลเลอร์การ์ด|เชียร์ลีดเดอร์/.test(value)) kind='baton';
+  else if (/บาส/.test(value)) kind='basketball'; else if (/เซปัก|ตะกร้อ/.test(value)) kind='takraw'; else if (/เปตอง/.test(value)) kind='petanque';
+  else if (/วอลเลย์/.test(value)) kind='volleyball'; else if (/ฟุตซอล/.test(value)) kind='goal'; else if (/ฟุตบอล/.test(value)) kind='football';
+  else if (/แบดมินตัน/.test(value)) kind='shuttle'; else if (/ประเภทลาน|จานร่อน|จานบิน/.test(value)) kind='discus'; else if (/กรีฑา/.test(value)) kind='runner';
+  const paths = {
+    'crown-gold':'<path d="M6 17 4.5 7l5 4 4.5-7 4.5 7 5-4L22 17Z"/><path d="M7 20h14"/>','crown-silver':'<path d="M6 17 4.5 7l5 4 4.5-7 4.5 7 5-4L22 17Z"/><path d="M7 20h14"/>',
+    wallet:'<path d="M4 8.5h17v12H4z"/><path d="M4 9V6.5h14V9m1 4h4v4h-4a2 2 0 0 1 0-4Z"/>',flag:'<path d="M7 23V4m1 2c5-3 7 3 13 0v10c-6 3-8-3-13 0"/>',
+    pom:'<path d="m14 14-3 9m3-9 3 9M8 4l6 10L5 9m15-5-6 10 9-5M14 14H4m10 0h10"/><circle cx="14" cy="14" r="2"/>',baton:'<circle cx="8" cy="20" r="3"/><path d="m10 18 9-11m-2-2 4 3m-3-4 4 3"/>',
+    basketball:'<circle cx="14" cy="14" r="10"/><path d="M4 14h20M14 4c4 4 4 16 0 20M7 7c4 3 10 3 14 0M7 21c4-3 10-3 14 0"/>',takraw:'<circle cx="14" cy="14" r="10"/><path d="m14 6 4 3-1.5 5H11L9.5 9Zm-3 8-4 4m9.5-4 4.5 4M9.5 9 6 8m12-1 3-1M14 19v5"/>',
+    petanque:'<circle cx="13" cy="14" r="9"/><path d="m8 9 10 10M6 13l8 8m-4-14 10 10"/><circle cx="23" cy="6" r="2" fill="currentColor" stroke="none"/>',volleyball:'<circle cx="14" cy="14" r="10"/><path d="M14 4c2 4 2 7 0 10m0 0c-4 0-7-1-9-3m9 3c2 3 3 6 2 10m-2-10c4-1 7-3 9-6"/>',
+    goal:'<path d="M4 22V8h20v14M4 8l4-4h16v18M4 22h20M8 8v14m4-14v14m4-14v14m4-14v14M4 12h20m-20 5h20"/>',football:'<circle cx="14" cy="14" r="10"/><path d="m14 9 4 3-1.5 5h-5L10 12Zm0-5v5m4 3 5-2m-6.5 7 3 4M11.5 17l-3 4M10 12 5 10"/>',
+    shuttle:'<path d="m7 5 12 12m-9-9 5-4m-2 7 5-4M7 5l-3 8 9 9 6-5Zm10 15 3 3"/>',runner:'<circle cx="17" cy="5" r="2" fill="currentColor" stroke="none"/><path d="m14 10 4 3 4-1m-8-2-3 5-5 1m8-1-3 8m3-8 4 3 1 5"/>',
+    discus:'<ellipse cx="14" cy="14" rx="10" ry="4" transform="rotate(-18 14 14)"/><path d="M5 16c4 1 12-1 18-5"/>',member:'<path d="m14 5 1.7 5.3L21 12l-5.3 1.7L14 19l-1.7-5.3L7 12l5.3-1.7Z"/>'
+  };
+  let drawing=paths[kind];
+  if(kind==='pr-tech') drawing='<path d="M5 20V8h6a4 4 0 0 1 0 8H5m4-4h2M16 20V8h4a3 3 0 0 1 0 6h-4m4 0 4 6"/><path class="role-icon-detail" d="M3 5h4m14 0h4M3 23h4m14 0h4"/>';
+  if(kind==='pr-cute') drawing='<text x="14" y="18" text-anchor="middle">PR</text><path class="role-icon-detail" d="m5 5 .6 2L8 8l-2.4.7L5 11l-.7-2.3L2 8l2.3-.7Zm18 12 .6 2 2.4.7-2.4.7L23 23l-.7-2.6-2.3-.7 2.3-.7Z"/>';
+  return `<span class="member-role-orb role-${kind}" aria-hidden="true"><svg viewBox="0 0 28 28" focusable="false">${drawing}</svg></span>`;
+};
 function openCommitteeDatabase() { return new Promise((resolve, reject) => { const request = indexedDB.open(COMMITTEE_DB, 1); request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains(COMMITTEE_STORE)) request.result.createObjectStore(COMMITTEE_STORE); }; request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); }
 async function readCommitteeDatabase() { const database = await openCommitteeDatabase(); return new Promise((resolve, reject) => { const transaction = database.transaction(COMMITTEE_STORE, 'readonly'); const request = transaction.objectStore(COMMITTEE_STORE).get('members'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); transaction.oncomplete = () => database.close(); }); }
 async function setCommitteeMembers(members) { const database = await openCommitteeDatabase(); await new Promise((resolve, reject) => { const transaction = database.transaction(COMMITTEE_STORE, 'readwrite'); transaction.objectStore(COMMITTEE_STORE).put(members, 'members'); transaction.oncomplete = resolve; transaction.onerror = () => reject(transaction.error); transaction.onabort = () => reject(transaction.error); }); database.close(); }
@@ -823,6 +847,7 @@ async function renderCommitteeMembers(force = false) {
     return `<section class="committee-section"><header class="committee-heading"><div><small>${eyebrow}</small><h3>${title}</h3></div><p>${text}</p></header>${members.length ? `<div class="committee-grid">${members.map((member, index) => `<article class="committee-card ${type === 'student' ? 'is-clickable' : ''}" style="--member-index:${index}" ${type === 'student' ? `tabindex="0" role="button" data-member-index="${all.indexOf(member)}" aria-label="ดูช่องทางติดต่อของ ${escapeAttribute(member.name || 'สมาชิก')}"` : ''}><div class="committee-photo">${member.image ? `<img src="${member.image}" alt="${escapeHTML(member.name || member.role)}" loading="lazy" decoding="async">` : '<span aria-hidden="true">✦</span>'}<b>${String(index + 1).padStart(2,'0')}</b></div><div class="committee-info"><small>${escapeHTML(member.role || 'สมาชิกคณะสี')}</small><h4>${escapeHTML(member.name || 'รอระบุชื่อ')}</h4>${member.nickname ? `<p>ชื่อเล่น <strong>${escapeHTML(member.nickname)}</strong></p>` : '<p>ทีมพันเรือง</p>'}</div></article>`).join('')}</div>` : `<div class="leaders-empty card"><span aria-hidden="true">✦</span><p>ยังไม่มีข้อมูล${type === 'student' ? 'แกนนำนักเรียน' : 'คณะครู'} — เพิ่มได้จากหน้าแอดมิน</p></div>`}</section>`;
   };
   host.innerHTML = section('student','STUDENT LEADERS','แกนนำนักเรียน','พลังหลักเบื้องหลังทุกสนาม ทุกขบวน และทุกเสียงเชียร์') + section('teacher','OUR ADVISORS','คณะครู','ครูผู้ดูแล ให้คำปรึกษา และร่วมผลักดันชาวพันเรือง');
+  host.querySelectorAll('.committee-section:first-child .committee-card').forEach((card, index) => card.insertAdjacentHTML('afterbegin', memberRoleIcon(all.filter((item) => item.type === 'student')[index]?.role)));
   committeeMembersRendered = true;
   host.querySelectorAll('.committee-card.is-clickable').forEach((card) => { const open = () => openMemberContactModal(all[Number(card.dataset.memberIndex)]); card.addEventListener('click', open); card.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); } }); });
   console.info('[Members] render completed');
