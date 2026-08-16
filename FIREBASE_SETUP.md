@@ -5,7 +5,16 @@
 3. ที่ **Authentication → Sign-in method** เปิดเฉพาะ **Email/Password** แล้วสร้าง Firebase Auth user สำหรับผู้ดูแลทุกเลขประจำตัว: เลข `44447` ให้สร้างอีเมล `44447@phunrueang.admin` (รูปแบบคือ `เลขประจำตัว@FIREBASE_ADMIN_EMAIL_DOMAIN` จาก `firebase-config.js`) ส่วน Password ใน Firebase ให้ตั้งเป็น `pn_` ตามด้วยรหัสเดิมที่ผู้ใช้กรอกหน้าแอดมิน เช่น รหัสเดิม `2580` ต้องตั้ง Firebase Password เป็น `pn_2580`
 4. คัดลอกค่า Web configuration ไปแทนค่า `PASTE_...` ใน [firebase-config.js](firebase-config.js)
 5. ใน Realtime Database → Rules ให้วางเนื้อหาจาก [firebase-database.rules.json](firebase-database.rules.json) แล้ว Publish (จำเป็นสำหรับระบบคะแนนแบบเรียลไทม์ใหม่ที่ `sites/phanuang/electionVotes`)
-6. Deploy ทั้ง `index.html`, `app.js`, `firebase-config.js`, `access-data.js` และไฟล์อื่น ๆ ใหม่พร้อมกัน แล้วเปิด Safari/iPhone/iPad ใหม่เพื่อรับ cache-busting version ล่าสุด
+6. ตั้งค่า Cloudinary ตามหัวข้อด้านล่าง แล้ว Deploy ทั้ง `index.html`, `app.js`, `cloudinary-config.js`, `firebase-config.js`, `access-data.js` และไฟล์อื่น ๆ ใหม่พร้อมกัน
+
+## ตั้งค่า Cloudinary สำหรับรูปภาพ
+
+1. สร้าง **Unsigned upload preset** ใน Cloudinary Console โดยจำกัดชนิดไฟล์เป็น JPG, PNG และ WebP
+2. ใส่เฉพาะ Cloud name และชื่อ unsigned preset ใน `cloudinary-config.js` ห้ามใส่ API Secret
+3. รูปภาพจะถูกย่อใน browser แล้วอัปโหลดไปยัง folder `phunrueang/members`, `phunrueang/gallery` หรือ `phunrueang/products`
+4. Firebase Realtime Database ยังคงเป็น source of truth และเก็บเฉพาะ Cloudinary `secure_url`/URL ปกติ ไม่เก็บไฟล์ภาพ Base64 ใหม่
+
+รูป Base64 เดิมจะยังใช้งานได้ชั่วคราว และย้ายไป Cloudinary อย่างปลอดภัยเมื่อผู้ดูแลแก้ไขแล้วกดบันทึกรายการหรือหมวดนั้นครั้งถัดไป
 
 ข้อมูลกลางอยู่ใต้ `sites/phanuang/state` และทุกแท็บที่เปิดเว็บอยู่จะรับการอัปเดตแบบเรียลไทม์ทันทีหลัง Firebase เริ่มทำงาน โดยไม่ต้องล็อกอินและไม่ใช้ Anonymous Authentication ข้อมูลจาก Firebase จะเขียนทับ localStorage ของเครื่องเสมอ รวมถึงเมื่อ snapshot จาก Firebase ว่าง เพื่อไม่ให้ข้อมูลเก่าในเครื่องใดเครื่องหนึ่งกลายเป็นข้อมูลกลาง
 
