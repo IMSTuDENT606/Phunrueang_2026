@@ -2507,16 +2507,49 @@ function stopAttendanceCamera() { window.clearTimeout(attendanceScanTimer); atte
 function closeAttendanceScanner() { stopAttendanceCamera(); $('#attendanceScanDialog')?.close(); }
 
 function attendanceStudentDirectory(){return Object.values(CLASSROOM_DATABASE).flatMap(room=>room.students.map(s=>({number:s[0],id:s[1],name:s[2],nickname:s[3],room:room.room}))).sort((a,b)=>a.room.localeCompare(b.room,'th')||+a.number-+b.number)}
+async function printAllSeatQrs() {
+  refreshSeatCodes();
+  if (!window.QRCode) { window.alert('โหลดระบบสร้าง QR Code ไม่สำเร็จ กรุณารีเฟรชหน้าแล้วลองใหม่'); return; }
+  const printWindow = open('', '_blank', 'width=1100,height=800');
+  if (!printWindow) { window.alert('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาต Pop-up แล้วลองใหม่'); return; }
+  printWindow.document.write('<!doctype html><html lang="th"><head><meta charset="UTF-8"><title>กำลังสร้าง QR ที่นั่ง…</title><style>body{display:grid;min-height:100vh;margin:0;place-items:center;font-family:sans-serif;color:#273243}div{text-align:center}b{display:block;margin-bottom:12px;font-size:22px}span{color:#687080}</style></head><body><div><b>กำลังสร้าง QR Code ทุกที่นั่ง</b><span id="progress">0%</span></div></body></html>');
+  printWindow.document.close();
+  const assignments = getStandConfig().assignments || {}, cards = [];
+  const maker = document.createElement('div');
+  maker.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:150px;height:150px';
+  document.body.appendChild(maker);
+  try {
+    for (let index = 0; index < seatCodes.length; index += 1) {
+      const seat = seatCodes[index];
+      maker.innerHTML = '';
+      new QRCode(maker, { text:`PHANUANG-SEAT:${seat}`, width:150, height:150, correctLevel:QRCode.CorrectLevel.H });
+      const image = maker.querySelector('canvas')?.toDataURL('image/png') || maker.querySelector('img')?.src || '';
+      const student = assignments[seat];
+      cards.push(`<article><img src="${image}" alt="QR ${seat}"><div><b>${seat}</b><span>${student ? escapeHTML(student.name) : 'ยังไม่ระบุนักเรียน'}</span><small>${student ? `ม.${escapeHTML(student.room)} · เลขที่ ${escapeHTML(student.number)}${student.nickname && student.nickname !== '—' ? ` · ${escapeHTML(student.nickname)}` : ''}` : 'PHANUANG GRANDSTAND'}</small></div></article>`);
+      if (index % 20 === 19) {
+        const progress = printWindow.document.querySelector('#progress');
+        if (progress) progress.textContent = `${Math.round((index + 1) / seatCodes.length * 100)}%`;
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+    }
+  } finally { maker.remove(); }
+  printWindow.document.open();
+  printWindow.document.write(`<!doctype html><html lang="th"><head><meta charset="UTF-8"><title>QR ที่นั่งทั้งหมด</title><style>@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0;color:#202733;font-family:Arial,"Tahoma",sans-serif}.sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:3mm}article{height:65mm;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:3mm;border:1px dashed #8b939d;break-inside:avoid;text-align:center}img{width:36mm;height:36mm;image-rendering:pixelated}article div{width:100%;min-width:0}b{display:block;margin:1mm 0 0;font-size:20pt;line-height:1.1}span,small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}span{margin-top:1mm;font-size:9pt;font-weight:700}small{margin-top:.6mm;color:#596473;font-size:7pt}.print-tools{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:#202a39;color:#fff}.print-tools button{padding:9px 18px;border:0;border-radius:6px;background:#e3b62d;font-weight:700;cursor:pointer}@media print{.print-tools{display:none}.sheet{gap:3mm}}</style></head><body><header class="print-tools"><span>QR ที่นั่งทั้งหมด ${seatCodes.length} ที่นั่ง</span><button onclick="print()">พิมพ์ทั้งหมด</button></header><main class="sheet">${cards.join('')}</main></body></html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.setTimeout(() => printWindow.print(), 500);
+}
 function enhanceStandManager(){
   const screen=document.querySelector('.stand-screen'),map=$('#seatMap');if(!screen||!map)return;refreshSeatCodes();
   document.querySelector('.seat-editor-dialog')?.remove();
-  const config=getStandConfig(),tools=document.createElement('section');tools.className='stand-manager';tools.innerHTML=`<div><small>STAND BUILDER</small><b>จัดผังและข้อมูลประจำที่นั่ง</b><span>กดที่นั่งเพื่อเลือกนักเรียนและสร้าง QR</span></div><label>จำนวนแถว<input id="standRows" type="number" min="1" max="26" value="${config.rows}"></label><label>ที่นั่งต่อแถว<input id="standColumns" type="number" min="1" max="50" value="${config.columns}"></label><button class="primary" id="saveStandLayout">บันทึกผัง</button>`;screen.before(tools);
+  const config=getStandConfig(),tools=document.createElement('section');tools.className='stand-manager';tools.innerHTML=`<div><small>STAND BUILDER</small><b>จัดผังและข้อมูลประจำที่นั่ง</b><span>กดที่นั่งเพื่อเลือกนักเรียนและสร้าง QR</span></div><label>จำนวนแถว<input id="standRows" type="number" min="1" max="26" value="${config.rows}"></label><label>ที่นั่งต่อแถว<input id="standColumns" type="number" min="1" max="50" value="${config.columns}"></label><button type="button" id="printAllSeatQr">▣ พิมพ์ QR ทั้งหมด</button><button class="primary" id="saveStandLayout">บันทึกผัง</button>`;screen.before(tools);
   const dialog=document.createElement('dialog');dialog.className='seat-editor-dialog';dialog.innerHTML=`<header><div><small>SEAT PROFILE</small><h3 id="seatEditorTitle"></h3></div><button type="button" data-seat-close>×</button></header><div class="seat-editor-body"><label>ค้นหาจากชื่อ ห้อง เลขที่ ชื่อเล่น หรือรหัส<input id="seatStudentSearch" placeholder="พิมพ์เพื่อค้นหา..."></label><select id="seatStudentSelect" size="8"></select><div id="seatStudentPreview"></div><div id="seatQr"></div><div class="seat-editor-actions"><button type="button" id="clearSeatStudent">ล้างที่นั่ง</button><button type="button" id="printSeatQr">พิมพ์ป้าย QR</button><button class="primary" type="button" id="saveSeatStudent">บันทึกนักเรียน</button></div></div>`;document.body.appendChild(dialog);
   let activeSeat='',filtered=[];const directory=attendanceStudentDirectory();
   const drawOptions=()=>{const q=$('#seatStudentSearch').value.trim().toLowerCase();filtered=directory.filter(s=>!q||`${s.name} ${s.nickname} ${s.room} ${s.number} ${s.id}`.toLowerCase().includes(q));$('#seatStudentSelect').innerHTML=filtered.map((s,i)=>`<option value="${i}">${escapeHTML(s.name)} · ม.${s.room} เลขที่ ${s.number} · ${escapeHTML(s.nickname)}</option>`).join('');};
   const preview=()=>{const s=filtered[+$('#seatStudentSelect').value];$('#seatStudentPreview').innerHTML=s?`<b>${escapeHTML(s.name)}</b><span>ม.${s.room} · เลขที่ ${s.number} · ${escapeHTML(s.nickname)} · ${s.id}</span>`:'<span>เลือกนักเรียนจากรายการ</span>';};
   const openSeat=seat=>{activeSeat=seat;$('#seatEditorTitle').textContent=`ที่นั่ง ${seat}`;$('#seatStudentSearch').value='';drawOptions();const assigned=getStandConfig().assignments?.[seat],index=filtered.findIndex(s=>s.id===assigned?.id);if(index>=0)$('#seatStudentSelect').value=index;preview();const qr=$('#seatQr');qr.innerHTML='';if(window.QRCode)new QRCode(qr,{text:`PHANUANG-SEAT:${seat}`,width:180,height:180,correctLevel:QRCode.CorrectLevel.H});dialog.showModal();};
   map.querySelectorAll('.seat').forEach(el=>{el.style.pointerEvents='auto';el.style.cursor='pointer';el.addEventListener('click',()=>openSeat(el.textContent.trim()))});
+  $('#printAllSeatQr').onclick=printAllSeatQrs;
   $('#saveStandLayout').onclick=async()=>{const button=$('#saveStandLayout'),next={...getStandConfig(),rows:Math.max(1,Math.min(26,+$('#standRows').value||1)),columns:Math.max(1,Math.min(50,+$('#standColumns').value||1))};button.disabled=true;try{await saveStandConfig(next);refreshSeatCodes();renderAdminPanel('attendance');showAdminToast('บันทึกผังส่วนกลางแล้ว',`${seatCodes.length} ที่นั่ง · ทุกเครื่องจะอัปเดตอัตโนมัติ`)}catch(error){button.disabled=false;window.alert(firebaseWriteErrorMessage(error))}};
   $('#seatStudentSearch').oninput=()=>{drawOptions();preview()};$('#seatStudentSelect').onchange=preview;$('[data-seat-close]').onclick=()=>dialog.close();
   $('#saveSeatStudent').onclick=async()=>{const student=filtered[+$('#seatStudentSelect').value];if(!student)return;const button=$('#saveSeatStudent'),c=getStandConfig();c.assignments=c.assignments||{};c.assignments[activeSeat]=student;button.disabled=true;try{await saveStandConfig(c);dialog.close();renderAdminPanel('attendance');showAdminToast('ผูกข้อมูลส่วนกลางแล้ว',`${activeSeat} · ${student.name}`)}catch(error){button.disabled=false;window.alert(firebaseWriteErrorMessage(error))}};
