@@ -169,6 +169,7 @@ function firebaseConfigured(config) {
 }
 function refreshRemoteViews() {
   const active = document.querySelector('.page.active')?.id;
+  if (active === 'home') renderHomeStandMap();
   if (active === 'members') void renderCommitteeMembers(true);
   if (active === 'election') renderElection();
   if (active === 'shop') void renderShop(true);
@@ -732,6 +733,7 @@ function showPage(id) {
 
   // Build expensive page content while it is still display:none. This avoids
   // interleaving a large DOM/layout pass with the page transition animation.
+  if (id === 'home') renderHomeStandMap();
   if (id === 'election') renderElection();
   if (id === 'gallery') renderGalleryPage();
   if (id === 'sports') renderSportsPage();
@@ -830,7 +832,9 @@ const memberRoleIcon = (role = '') => {
   const value = String(role).toLowerCase().replace(/\s+/g, '');
   const isAssistant = /สตาฟ|ผู้ช่วย|assistant|staff/.test(value);
   let kind = 'member';
-  if (/ประชาสัมพันธ์/.test(value)) kind='pr-cute'; else if (/admin|แอดมิน|admin\.pr/.test(value)) kind='pr-tech';
+  if (/เลขานุการ|secretary/.test(value)) kind='secretary'; else if (/ฝ่ายบริการ|งานบริการ|service/.test(value)) kind='service';
+  else if (/(?:ขบวน.*แสตนด์|แสตนด์.*ขบวน)/.test(value)) kind='parade-stand';
+  else if (/ประชาสัมพันธ์/.test(value)) kind='pr-cute'; else if (/admin|แอดมิน|admin\.pr/.test(value)) kind='pr-tech';
   else if (/รองประธาน/.test(value)) kind='crown-silver'; else if (/ประธาน/.test(value)) kind='crown-gold'; else if (/เหรัญญิก/.test(value)) kind='treasure'; else if (/สวัสดิการ|พยาบาล/.test(value)) kind='first-aid';
   else if (/ขบวน/.test(value)) kind='flag'; else if (/แสตนด์/.test(value)) kind='pom'; else if (/พร็อพ|prop/.test(value)) kind='props'; else if (/คัตเอาท์|cutout/.test(value)) kind='scissors'; else if (/หลีด|ดรัม|คัลเลอร์การ์ด|เชียร์ลีดเดอร์/.test(value)) kind='baton';
   else if (/บาส/.test(value)) kind='basketball'; else if (/เซปัก|ตะกร้อ/.test(value)) kind='takraw'; else if (/เปตอง/.test(value)) kind='petanque';
@@ -857,6 +861,9 @@ const memberRoleIcon = (role = '') => {
     member:'<path class="icon-fill" d="m14 3.5 2.2 7.2 7.3 2.3-7.3 2.2-2.2 7.3-2.3-7.3L4.5 13l7.2-2.3Z"/>'
   };
   Object.assign(paths, {
+    secretary:'<rect x="6" y="5" width="16" height="19" rx="2"/><path d="M10 5V3h8v4h-8Zm0 7h7m-7 4h5m-5 4h4m5.5-9.5 2 2-5.5 5.5-3 1 1-3Z"/>',
+    service:'<path d="M5 19h18M7 19c.5-6 3-9 7-9s6.5 3 7 9M14 10V7"/><circle cx="14" cy="5" r="2"/><path d="m5 7 .6 1.7L7.5 9.5l-1.9.7L5 12l-.7-1.8-1.8-.7 1.8-.8Zm18-3 .5 1.4 1.5.6-1.5.6L23 8l-.6-1.4L21 6l1.4-.6Z"/>',
+    'parade-stand':'<path d="M6 24V4m1 2c4-2.5 6 2.5 11 0v8c-5 2.5-7-2.5-11 0M11 24h13m-11-4h11m-8-4h8m-1 0v8"/>',
     'crown-gold':'<path d="M6 17 4.5 7l5 4 4.5-7 4.5 7 5-4L22 17Z"/><path d="M7 20h14"/>','crown-silver':'<path d="M6 17 4.5 7l5 4 4.5-7 4.5 7 5-4L22 17Z"/><path d="M7 20h14"/>',
     treasure:'<path d="M4 12h20v11H4zM6 12V9c0-3 3-5 8-5s8 2 8 5v3M4 16h20"/><path d="M12 14h4v5h-4zM7 19v4m14-4v4"/>','first-aid':'<rect x="4" y="8" width="20" height="15" rx="2"/><path d="M10 8V5h8v3m-6 4h4v3h3v4h-3v3h-4v-3H9v-4h3Z"/>',flag:'<path d="M7 23V4m1 2c5-3 7 3 13 0v10c-6 3-8-3-13 0"/>',props:'<path d="m6 23 11-16 4 3-11 15Z"/><path d="m15 8 3-4 5 4-3 4M5 5l18 18M4 4l4 1-3 3Z"/>',
     pom:'<path d="m10 18-3 6m11-6 3 6"/><path d="M9 17 4 15l3-2-3-3 4-.2L7 6l4 1 1-4 2 4 3-3 .5 4L22 7l-2 4 4 2-4 2 2 4-4-.5-1 4-3-3-3 3-.5-4-4 1.5Z"/><circle cx="14" cy="14" r="3"/>',baton:'<path d="m8 22 12-16"/><circle cx="7" cy="23" r="2.5"/><path d="m20 3 .9 2.1L23 6l-2.1.9L20 9l-.9-2.1L17 6l2.1-.9Z"/><path d="m10 18 3 2m4-12 3 2"/>',
@@ -939,7 +946,13 @@ async function renderCommitteeMembers(force = false) {
     return `<section class="committee-section"><header class="committee-heading"><div><small>${eyebrow}</small><h3>${title}</h3></div><p>${text}</p></header>${members.length ? `<div class="committee-grid">${members.map((member, index) => `<article class="committee-card ${type === 'student' ? 'is-clickable' : ''}" style="--member-index:${index}" ${type === 'student' ? `tabindex="0" role="button" data-member-index="${all.indexOf(member)}" aria-label="ดูช่องทางติดต่อของ ${escapeAttribute(member.name || 'สมาชิก')}"` : ''}><div class="committee-photo">${member.image ? `<img src="${member.image}" alt="${escapeHTML(member.name || member.role)}" loading="lazy" decoding="async">` : '<span aria-hidden="true">✦</span>'}<b>${String(index + 1).padStart(2,'0')}</b></div><div class="committee-info"><small>${escapeHTML(member.role || 'สมาชิกคณะสี')}</small><h4>${escapeHTML(member.name || 'รอระบุชื่อ')}</h4>${member.nickname ? `<p>ชื่อเล่น <strong>${escapeHTML(member.nickname)}</strong></p>` : '<p>ทีมพันเรือง</p>'}</div></article>`).join('')}</div>` : `<div class="leaders-empty card"><span aria-hidden="true">✦</span><p>ยังไม่มีข้อมูล${type === 'student' ? 'แกนนำนักเรียน' : 'คณะครู'} — เพิ่มได้จากหน้าแอดมิน</p></div>`}</section>`;
   };
   host.innerHTML = section('student','STUDENT LEADERS','แกนนำนักเรียน','พลังหลักเบื้องหลังทุกสนาม ทุกขบวน และทุกเสียงเชียร์') + section('teacher','OUR ADVISORS','คณะครู','ครูผู้ดูแล ให้คำปรึกษา และร่วมผลักดันชาวพันเรือง');
-  host.querySelectorAll('.committee-section:first-child .committee-card').forEach((card, index) => card.insertAdjacentHTML('afterbegin', memberRoleIcon(all.filter((item) => item.type === 'student')[index]?.role)));
+  host.querySelectorAll('.committee-section').forEach((sectionElement, sectionIndex) => {
+    const type = sectionIndex === 0 ? 'student' : 'teacher';
+    const sectionMembers = all.filter((item) => item.type === type);
+    sectionElement.querySelectorAll('.committee-card').forEach((card, index) => {
+      card.insertAdjacentHTML('afterbegin', memberRoleIcon(sectionMembers[index]?.role));
+    });
+  });
   committeeMembersRendered = true;
   host.querySelectorAll('.committee-card.is-clickable').forEach((card) => { const open = () => openMemberContactModal(all[Number(card.dataset.memberIndex)]); card.addEventListener('click', open); card.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); } }); });
   console.info('[Members] render completed');
@@ -2038,6 +2051,15 @@ async function saveStandConfig(config) {
 }
 function refreshSeatCodes(){const c=getStandConfig();seats=Array.from({length:Math.max(1,Math.min(26,+c.rows||10))},(_,r)=>Array.from({length:Math.max(1,Math.min(50,+c.columns||18))},(_,col)=>`${String.fromCharCode(65+r)}${col+1}`));seatCodes=seats.flat();seatCodeSet=new Set(seatCodes)}
 refreshSeatCodes();
+function renderHomeStandMap() {
+  const host = $('#homeStandMap');
+  if (!host) return;
+  refreshSeatCodes();
+  const config = getStandConfig(), assignments = config.assignments || {};
+  const assignedCount = seatCodes.filter(code => assignments[code]).length;
+  host.innerHTML = `<div class="home-stand-stage"><span></span><b>STAGE · เวทีกลาง</b><span></span></div><div class="home-stand-scroll"><div class="home-stand-grid" style="--home-columns:${config.columns};--home-min-width:${Math.max(620, config.columns * 62)}px">${seatCodes.map((code,index) => { const student=assignments[code],nickname=student?.nickname && student.nickname !== '—' ? student.nickname : student?.name?.split(' ')[0]; return `<article class="home-seat ${student?'is-assigned':'is-empty'}" title="${student?`${escapeAttribute(student.name)} · ม.${escapeAttribute(student.room)} เลขที่ ${escapeAttribute(student.number)}`:'ยังไม่มีผู้ประจำที่นั่ง'}"><small>${String.fromCharCode(65 + Math.floor(index/config.columns))}</small><b>${code}</b><span>${student?escapeHTML(nickname):'ว่าง'}</span></article>`; }).join('')}</div></div><footer><div><span class="assigned"><i></i> มีผู้ประจำที่นั่ง</span><span><i></i> ที่นั่งว่าง</span></div><p><b>${assignedCount}</b> / ${seatCodes.length} ที่นั่งถูกจัดแล้ว</p></footer>`;
+}
+renderHomeStandMap();
 const ATTENDANCE_SESSIONS_KEY = 'phanuang-attendance-sessions';
 const ATTENDANCE_RECORDS_KEY = 'phanuang-attendance-records';
 const ATTENDANCE_RESET_VERSION = 'attendance-reset-unlimited-v1';
