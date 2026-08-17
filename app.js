@@ -64,7 +64,7 @@ const FIREBASE_SHARED_KEYS = new Set([
   'phanuang-access-directory',
   'phanuang-store-products', 'phanuang-store-lookbook-config', 'phanuang-orders',
   'phanuang-gallery', 'phanuang-attendance-sessions', 'phanuang-attendance-records',
-  'phanuang-attendance-config', 'phanuang-sports-results-v1'
+  'phanuang-attendance-config', 'phanuang-stand-config', 'phanuang-sports-results-v1'
 ]);
 const isFirebaseSharedKey = (key) => FIREBASE_SHARED_KEYS.has(String(key)) || String(key).startsWith('phanuang-store-media-');
 const firebaseKey = (key) => encodeURIComponent(String(key));
@@ -103,6 +103,25 @@ async function saveFirebaseSharedValue(key, value) {
   if (!firebaseReady || !firebaseSyncRoot) throw Object.assign(new Error('Firebase is not ready'), { code: 'firebase/not-ready' });
   if (!firebaseAuthUser) throw Object.assign(new Error('Admin authentication is required'), { code: 'auth/admin-required' });
   await firebaseSyncRoot.child(firebaseKey(key)).set({ value: String(value), updatedAt: firebase.database.ServerValue.TIMESTAMP });
+}
+async function saveAttendanceSeatTransaction(sessionId, seatCode, record) {
+  if (!firebaseReady || !firebaseSyncRoot) throw Object.assign(new Error('Firebase is not ready'), { code: 'firebase/not-ready' });
+  if (!firebaseAuthUser) throw Object.assign(new Error('Admin authentication is required'), { code: 'auth/admin-required' });
+  const key = 'phanuang-attendance-records';
+  let alreadyChecked = null;
+  const result = await firebaseSyncRoot.child(firebaseKey(key)).transaction((cloudRecord) => {
+    let records = {};
+    try { records = JSON.parse(cloudRecord?.value || '{}'); } catch (_) {}
+    const attendance = records[sessionId] && typeof records[sessionId] === 'object' ? records[sessionId] : {};
+    if (attendance[seatCode]) { alreadyChecked = attendance[seatCode]; return; }
+    records[sessionId] = { ...attendance, [seatCode]: record };
+    return { value: JSON.stringify(records), updatedAt: firebase.database.ServerValue.TIMESTAMP };
+  }, undefined, false);
+  if (!result.committed) return { committed:false, existing:alreadyChecked };
+  const value = result.snapshot.val()?.value || '{}';
+  firebaseManualWriteKeys.add(key);
+  try { localStorage.setItem(key, value); } finally { firebaseManualWriteKeys.delete(key); }
+  return { committed:true };
 }
 const isEmbeddedImage = (value) => typeof value === 'string' && value.startsWith('data:image/');
 async function uploadMediaImage(value, folder = 'misc', onStatus) {
@@ -155,7 +174,15 @@ function refreshRemoteViews() {
   if (active === 'shop') void renderShop(true);
   if (active === 'gallery') renderGalleryPage();
   if (active === 'sports') renderSportsPage();
-  if (active === 'admin') renderAdmin();
+  if (active === 'admin') {
+    const activeTab = document.querySelector('.admin-tab.active')?.dataset.adminTab;
+    // Keep an in-progress camera/manual check-in open while another admin checks
+    // a seat. The map behind it still updates from the authoritative snapshot.
+    if (activeTab === 'attendance' && document.querySelector('#attendanceScanDialog[open]')) {
+      renderSeatMap();
+      updateAttendanceStatus();
+    } else renderAdmin();
+  }
 }
 async function configureFirebaseAuthPersistence(auth) {
   const persistence = firebase.auth.Auth.Persistence;
@@ -2003,6 +2030,12 @@ function teacherAccountsForRooms(rooms = []) { return TEACHER_ACCOUNTS.filter((t
 if (!localStorage.getItem('phanuang-access-directory') && Array.isArray(window.PHANUANG_ACCESS_DIRECTORY)) localStorage.setItem('phanuang-access-directory', JSON.stringify(window.PHANUANG_ACCESS_DIRECTORY));
 let seats = [], seatCodes = [], seatCodeSet = new Set();
 function getStandConfig(){try{return {...{rows:10,columns:18,assignments:{}},...JSON.parse(localStorage.getItem('phanuang-stand-config')||'{}')}}catch(_){return {rows:10,columns:18,assignments:{}}}}
+async function saveStandConfig(config) {
+  const key = 'phanuang-stand-config', value = JSON.stringify(config);
+  await saveFirebaseSharedValue(key, value);
+  firebaseManualWriteKeys.add(key);
+  try { localStorage.setItem(key, value); } finally { firebaseManualWriteKeys.delete(key); }
+}
 function refreshSeatCodes(){const c=getStandConfig();seats=Array.from({length:Math.max(1,Math.min(26,+c.rows||10))},(_,r)=>Array.from({length:Math.max(1,Math.min(50,+c.columns||18))},(_,col)=>`${String.fromCharCode(65+r)}${col+1}`));seatCodes=seats.flat();seatCodeSet=new Set(seatCodes)}
 refreshSeatCodes();
 const ATTENDANCE_SESSIONS_KEY = 'phanuang-attendance-sessions';
@@ -2399,7 +2432,7 @@ function showAdminToast(title, message) {
   window.setTimeout(() => { toast.classList.remove('show'); window.setTimeout(() => toast.remove(),350); }, 4200);
 }
 function extractSeatCode(value) { const match=String(value||'').toUpperCase().match(/(?:PHANUANG-SEAT:)?([A-Z](?:[1-9]|[1-4][0-9]|50))\b/);return match?.[1]||''; }
-function markAttendance(rawCode, method = 'QR Code') {
+async function markAttendance(rawCode, method = 'QR Code') {
   const error = $('#attendanceScanError');
   const code = extractSeatCode(rawCode);
   const config = getAttendanceConfig();
@@ -2407,13 +2440,23 @@ function markAttendance(rawCode, method = 'QR Code') {
   const status = getAttendanceWindowStatus(config);
   const fail = (message) => { if (error) error.textContent = message; else window.alert(message); };
   if (!status.allowed) { fail(status.message); return false; }
-  if (!code || !seatCodeSet.has(code)) { fail('ไม่พบรหัสที่นั่ง กรุณาใช้รหัส A1–J18'); return false; }
+  if (!code || !seatCodeSet.has(code)) { fail(`ไม่พบรหัสที่นั่ง กรุณาใช้รหัสตามผังปัจจุบัน (${seatCodes[0]}–${seatCodes.at(-1)})`); return false; }
   const records = getAttendanceRecords();
   const attendance = records[activeSessionId] || {};
-  if (attendance[code]) { fail(`ที่นั่ง ${code} เช็คชื่อแล้วเมื่อ ${new Date(attendance[code].time).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})} น.`); return false; }
-  attendance[code] = { status:'มา', time:new Date().toISOString(), method };
-  records[activeSessionId] = attendance;
-  localStorage.setItem(ATTENDANCE_RECORDS_KEY, JSON.stringify(records));
+  if (attendance[code]) { fail(`เลขที่นั่ง ${code} เช็คไปแล้วเมื่อ ${new Date(attendance[code].time).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})} น.`); return false; }
+  const record = { status:'มา', time:new Date().toISOString(), method, adminUid:firebaseAuthUser?.uid || '' };
+  try {
+    const result = await saveAttendanceSeatTransaction(activeSessionId, code, record);
+    if (!result.committed) {
+      const existing = result.existing;
+      fail(existing?.time ? `เลขที่นั่ง ${code} เช็คไปแล้วเมื่อ ${new Date(existing.time).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})} น.` : `เลขที่นั่ง ${code} เช็คไปแล้วจากอีกเครื่อง`);
+      return false;
+    }
+  } catch (firebaseError) {
+    console.error('[Attendance] transaction failed', firebaseError?.code, firebaseError?.message);
+    fail(firebaseWriteErrorMessage(firebaseError));
+    return false;
+  }
   attendanceViewingSessionId = activeSessionId;
   renderSeatMap();
   if (error) { error.classList.add('success-message'); error.textContent = `บันทึกที่นั่ง ${code} เรียบร้อยแล้ว`; }
@@ -2454,7 +2497,7 @@ async function startAttendanceCamera() {
     const canvas=document.createElement('canvas'),context=canvas.getContext('2d',{willReadFrequently:true});
     const detect = async () => {
       if (!attendanceCameraStream || !$('#attendanceScanDialog')?.open) return;
-      try { let raw='';if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||'';}else if(window.jsQR&&video.videoWidth){canvas.width=video.videoWidth;canvas.height=video.videoHeight;context.drawImage(video,0,0);const frame=context.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(frame.data,frame.width,frame.height,{inversionAttempts:'dontInvert'})?.data||'';}if(raw&&markAttendance(raw,'QR Code')){message.textContent='สแกนสำเร็จ';window.setTimeout(closeAttendanceScanner,650);return;} } catch (_) {}
+      try { let raw='';if(detector){const codes=await detector.detect(video);raw=codes[0]?.rawValue||'';}else if(window.jsQR&&video.videoWidth){canvas.width=video.videoWidth;canvas.height=video.videoHeight;context.drawImage(video,0,0);const frame=context.getImageData(0,0,canvas.width,canvas.height);raw=jsQR(frame.data,frame.width,frame.height,{inversionAttempts:'dontInvert'})?.data||'';}if(raw&&await markAttendance(raw,'QR Code')){message.textContent='สแกนสำเร็จ';window.setTimeout(closeAttendanceScanner,650);return;} } catch (_) {}
       attendanceScanTimer = window.setTimeout(detect, 280);
     };
     detect();
@@ -2474,10 +2517,10 @@ function enhanceStandManager(){
   const preview=()=>{const s=filtered[+$('#seatStudentSelect').value];$('#seatStudentPreview').innerHTML=s?`<b>${escapeHTML(s.name)}</b><span>ม.${s.room} · เลขที่ ${s.number} · ${escapeHTML(s.nickname)} · ${s.id}</span>`:'<span>เลือกนักเรียนจากรายการ</span>';};
   const openSeat=seat=>{activeSeat=seat;$('#seatEditorTitle').textContent=`ที่นั่ง ${seat}`;$('#seatStudentSearch').value='';drawOptions();const assigned=getStandConfig().assignments?.[seat],index=filtered.findIndex(s=>s.id===assigned?.id);if(index>=0)$('#seatStudentSelect').value=index;preview();const qr=$('#seatQr');qr.innerHTML='';if(window.QRCode)new QRCode(qr,{text:`PHANUANG-SEAT:${seat}`,width:180,height:180,correctLevel:QRCode.CorrectLevel.H});dialog.showModal();};
   map.querySelectorAll('.seat').forEach(el=>{el.style.pointerEvents='auto';el.style.cursor='pointer';el.addEventListener('click',()=>openSeat(el.textContent.trim()))});
-  $('#saveStandLayout').onclick=()=>{const next={...getStandConfig(),rows:Math.max(1,Math.min(26,+$('#standRows').value||1)),columns:Math.max(1,Math.min(50,+$('#standColumns').value||1))};localStorage.setItem('phanuang-stand-config',JSON.stringify(next));refreshSeatCodes();renderAdminPanel('attendance');showAdminToast('บันทึกผังแล้ว',`${seatCodes.length} ที่นั่ง`)};
+  $('#saveStandLayout').onclick=async()=>{const button=$('#saveStandLayout'),next={...getStandConfig(),rows:Math.max(1,Math.min(26,+$('#standRows').value||1)),columns:Math.max(1,Math.min(50,+$('#standColumns').value||1))};button.disabled=true;try{await saveStandConfig(next);refreshSeatCodes();renderAdminPanel('attendance');showAdminToast('บันทึกผังส่วนกลางแล้ว',`${seatCodes.length} ที่นั่ง · ทุกเครื่องจะอัปเดตอัตโนมัติ`)}catch(error){button.disabled=false;window.alert(firebaseWriteErrorMessage(error))}};
   $('#seatStudentSearch').oninput=()=>{drawOptions();preview()};$('#seatStudentSelect').onchange=preview;$('[data-seat-close]').onclick=()=>dialog.close();
-  $('#saveSeatStudent').onclick=()=>{const student=filtered[+$('#seatStudentSelect').value];if(!student)return;const c=getStandConfig();c.assignments=c.assignments||{};c.assignments[activeSeat]=student;localStorage.setItem('phanuang-stand-config',JSON.stringify(c));dialog.close();renderAdminPanel('attendance');showAdminToast('ผูกข้อมูลแล้ว',`${activeSeat} · ${student.name}`)};
-  $('#clearSeatStudent').onclick=()=>{const c=getStandConfig();delete c.assignments?.[activeSeat];localStorage.setItem('phanuang-stand-config',JSON.stringify(c));dialog.close();renderAdminPanel('attendance')};
+  $('#saveSeatStudent').onclick=async()=>{const student=filtered[+$('#seatStudentSelect').value];if(!student)return;const button=$('#saveSeatStudent'),c=getStandConfig();c.assignments=c.assignments||{};c.assignments[activeSeat]=student;button.disabled=true;try{await saveStandConfig(c);dialog.close();renderAdminPanel('attendance');showAdminToast('ผูกข้อมูลส่วนกลางแล้ว',`${activeSeat} · ${student.name}`)}catch(error){button.disabled=false;window.alert(firebaseWriteErrorMessage(error))}};
+  $('#clearSeatStudent').onclick=async()=>{const button=$('#clearSeatStudent'),c=getStandConfig();delete c.assignments?.[activeSeat];button.disabled=true;try{await saveStandConfig(c);dialog.close();renderAdminPanel('attendance')}catch(error){button.disabled=false;window.alert(firebaseWriteErrorMessage(error))}};
   $('#printSeatQr').onclick=()=>{const s=filtered[+$('#seatStudentSelect').value],img=$('#seatQr img')?.src||$('#seatQr canvas')?.toDataURL();if(!img)return;const w=open('','_blank','width=500,height=650');w.document.write(`<title>QR ${activeSeat}</title><style>body{text-align:center;font-family:sans-serif;padding:35px}img{width:280px}h1{font-size:60px;margin:10px}p{font-size:18px}</style><img src="${img}"><h1>${activeSeat}</h1><p>${escapeHTML(s?.name||'ยังไม่ระบุนักเรียน')}<br>${s?`ม.${s.room} เลขที่ ${s.number} · ${escapeHTML(s.nickname)}`:''}</p>`);w.document.close();setTimeout(()=>w.print(),400)};
 }
 
