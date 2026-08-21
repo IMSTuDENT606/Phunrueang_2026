@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="home-wow.css?v=7" />
   <link rel="stylesheet" href="dialogs.css?v=1" />
   <link rel="stylesheet" href="performance.css?v=3" />
+  <link rel="stylesheet" href="token-league.css?v=15" />
 </head>
 <body data-active-page="home">
   <div class="school"></div>
@@ -35,6 +36,7 @@
       <button data-page="shop">สั่งซื้อสินค้า</button>
       <button data-page="gallery">รูปภาพกิจกรรม</button>
       <button data-page="sports">สรุปผลกีฬา</button>
+      <button data-page="tokens">ลีกออฟโทเค็น</button>
       <button class="admin-nav-button" data-page="admin">แอดมิน</button>
     </div>
     <button class="menu-mobile" data-page="home">หน้าแรก</button>
@@ -51,6 +53,7 @@
           <button class="go" data-page="shop"><span><b>สั่งซื้อสินค้า</b><small>เสื้อเชียร์ เสื้อกีฬา และของที่ระลึก</small></span><b>→</b></button>
           <button class="go" data-page="gallery"><span><b>รูปภาพกิจกรรม</b><small>ชมภาพความทรงจำและกิจกรรมของคณะพันเรือง</small></span><b>→</b></button>
           <button class="go sports-home-button" data-page="sports"><span><b>สรุปผลกีฬา</b><small>เช็กผลรายวัน สายการแข่งขัน และเหรียญของสีเรา</small></span><b>→</b></button>
+          <button class="go token-home-button" data-page="tokens"><span><b>ลีกออฟโทเค็น</b><small>ดูอันดับ 20 นักสู้แสตนด์ประจำสัปดาห์</small></span><b>★</b></button>
         </div>
       </div><div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><span class="spark spark-a">✦</span><span class="spark spark-b">✦</span><span class="spark spark-c">✹</span><div class="sticker sticker-top">พลังของเรา!</div><div class="crest"><div class="sun-rays"></div><div class="crest-burst"></div><div class="word"><small><i></i> WE SHINE TOGETHER <i></i></small><strong data-text="PHUN">PHUN</strong><strong data-text="RUEANG">RUEANG</strong><span class="word-flare">✦</span></div><button class="admin-quick" id="adminQuick" type="button" aria-label="เข้าสู่ส่วนผู้ดูแล">ADMIN <span>→</span></button></div><div class="sticker sticker-bottom"><b>พร้อม</b> เปล่งประกาย</div></div></div>
       <section class="home-stand" aria-labelledby="homeStandTitle">
@@ -275,6 +278,9 @@
       </div>
       <div id="sportsContent"></div>
     </section>
+    <section class="page token-page" id="tokens">
+      <div id="tokenLeagueContent"></div>
+    </section>
     <section class="page" id="gallery">
       <div class="title"><div class="section-label">PHUNRUEANG MOMENTS</div><h2>รูปภาพกิจกรรม</h2><p>ทุกช่วงเวลาที่ทำให้คณะพันเรืองเปล่งประกายไปด้วยกัน</p></div>
       <div id="galleryPageContent"></div>
@@ -293,6 +299,6 @@
   <script src="access-data.js?v=2"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-  <script src="app.js?v=87"></script>
+  <script src="app.js?v=88"></script>
 </body>
 </html>
