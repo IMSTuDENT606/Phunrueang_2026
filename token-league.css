@@ -105,3 +105,6 @@ body.token-mode{background:#53c8f5!important}
 .token-mode .token-hero h1{color:#ffd53a!important;-webkit-text-stroke:3px #17345e;paint-order:stroke fill;text-shadow:0 5px 0 #ef493d,0 10px 0 #17345e,0 16px 22px #0d315c55!important;letter-spacing:-2px}
 .token-mode .nav button[data-page="tokens"]{background:#ffd43b!important;color:#102c55!important;border-color:#17345e!important;text-shadow:none!important;box-shadow:inset 0 -5px #e7941f,0 0 0 3px #17345e!important}
 @media(max-width:700px){.token-mode .token-world{padding-top:66px!important}.token-mode .token-world:after{top:18px!important}.token-mode .token-hero h1{-webkit-text-stroke:2px #17345e;letter-spacing:-1px}}
+
+/* V16 — keep rank #4 visible: table header belongs to the normal document flow */
+.token-mode .token-list-head{position:relative!important;top:auto!important;z-index:1!important}
