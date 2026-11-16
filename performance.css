@@ -24,7 +24,7 @@
 .page:not(.active),
 .page:not(.active) *,
 .page-inactive *,
-.is-offscreen *,
+.is-offscreen *, 
 .admin-offscreen *,
 .perf-offscreen,
 .perf-offscreen * {

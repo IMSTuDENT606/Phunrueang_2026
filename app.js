@@ -65,7 +65,7 @@ const FIREBASE_SHARED_KEYS = new Set([
   'phanuang-store-products', 'phanuang-store-lookbook-config', 'phanuang-orders',
   'phanuang-gallery', 'phanuang-attendance-sessions', 'phanuang-attendance-records',
   'phanuang-attendance-config', 'phanuang-stand-config', 'phanuang-sports-results-v1',
-  'phanuang-activity-attendance', 'phanuang-token-league-v1'
+  'phanuang-activity-attendance', 'phanuang-classroom-attendance-v1', 'phanuang-token-league-v1'
 ]);
 const isFirebaseSharedKey = (key) => FIREBASE_SHARED_KEYS.has(String(key)) || String(key).startsWith('phanuang-store-media-');
 const firebaseKey = (key) => encodeURIComponent(String(key));
@@ -191,6 +191,10 @@ function refreshRemoteViews() {
       if (!activityAttendanceDraftDirty && !document.querySelector('.activity-student-picker[open]')) {
         renderActivityAttendance($('#adminPanel'));
       }
+    } else if (activeTab === 'classroom-attendance') {
+      // Do not rebuild this panel after every remote update. Several admins can
+      // tick names concurrently without one browser being thrown back to a tab.
+      refreshClassroomAttendanceUI();
     } else if(activeTab==='tokens') renderTokenAdminV3($('#adminPanel'));
     else renderAdmin();
   }
@@ -2123,7 +2127,7 @@ function renderAdmin() {
   const firebaseLive=firebaseConnectionState==='LIVE',firebaseHint=firebaseConnectionDetail||firebaseConnectionState;
   host.innerHTML = `<div class="admin-workspace"><header class="admin-top"><div class="staff-avatar">${staff.name.slice(0,1)}</div><div><small>${staff.role==='teacher'?'สิทธิ์ครูที่ปรึกษา':'สิทธิ์แอดมินนักเรียน'} · ${escapeHTML(staff.room||'-')}</small><p><b>${staff.name}</b> <span>พร้อมใช้งาน</span></p></div><div class="admin-live" title="Database: ${escapeAttribute(firebaseHint)} · Permission: ${firebaseAdminPermission}"><i></i> ${firebaseLive ? 'เชื่อมต่อข้อมูลแล้ว' : 'ออฟไลน์'}</div><button class="admin-help-button" id="adminHome" type="button">⌂ หน้าช่วยเหลือ</button><button class="mini" id="adminLogout">ออกจากระบบ</button></header>${firebaseLive ? (firebaseAdminPermission==='ADMIN WRITE' ? '' : `<p class="admin-system-warning">⚠ เชื่อมต่อแล้ว แต่บัญชีนี้ดูข้อมูลได้อย่างเดียว</p>`) : `<p class="admin-system-warning">⚠ ยังเชื่อมต่อฐานข้อมูลไม่ได้ · ${escapeHTML(firebaseHint)}</p>`}<div class="admin-nav-hint"><b>เลือกงานที่ต้องการทำ</b><span>เริ่มจาก “หน้าหลัก” หากไม่แน่ใจว่าต้องเข้าเมนูไหน</span></div><nav class="admin-tabs" aria-label="เมนูผู้ดูแล"><button class="admin-tab active" data-admin-tab="overview"><i>⌂</i><span>หน้าหลัก<small>เริ่มต้นที่นี่</small></span></button><button class="admin-tab" data-admin-tab="attendance"><i>✓</i><span>เช็คชื่อแสตนด์<small>สแกน QR ที่นั่ง</small></span></button><button class="admin-tab" data-admin-tab="attendance-history"><i>◴</i><span>รายงานแสตนด์<small>ดูผล / PDF</small></span></button><button class="admin-tab" data-admin-tab="tokens"><i>★</i><span>แจกโทเค็น<small>กิจกรรมบนแสตนด์</small></span></button><button class="admin-tab" data-admin-tab="sports"><i>🏆</i><span>ผลการแข่งขัน<small>บันทึกผลกีฬา</small></span></button><button class="admin-tab" data-admin-tab="members"><i>♙</i><span>ทีมงาน<small>แก้ไขสมาชิก</small></span></button><button class="admin-tab" data-admin-tab="store"><i>◆</i><span>ร้านค้า<small>สินค้าและสต็อก</small></span></button><button class="admin-tab" data-admin-tab="orders"><i>▤</i><span>คำสั่งซื้อ<small>รายการและ CSV</small></span></button><button class="admin-tab" data-admin-tab="photos"><i>◫</i><span>รูปกิจกรรม<small>จัดการแกลเลอรี</small></span></button><button class="admin-tab" data-admin-tab="election"><i>✦</i><span>เลือกตั้ง<small>ผู้สมัครและผล</small></span></button></nav><div id="adminPanel"></div></div>`;
   const sportsTab=document.querySelector('[data-admin-tab="sports"]');
-  if(sportsTab){const teamTab=document.createElement('button');teamTab.className='admin-tab';teamTab.dataset.adminTab='activity-attendance';teamTab.innerHTML='<i>♟</i><span>นักกีฬา/ขบวน<small>TEAMS</small></span>';sportsTab.before(teamTab);}
+  if(sportsTab){const teamTab=document.createElement('button');teamTab.className='admin-tab';teamTab.dataset.adminTab='activity-attendance';teamTab.innerHTML='<i>♟</i><span>นักกีฬา/ขบวน<small>TEAMS</small></span>';sportsTab.before(teamTab);const classroomTab=document.createElement('button');classroomTab.className='admin-tab';classroomTab.dataset.adminTab='classroom-attendance';classroomTab.innerHTML='<i>☷</i><span>เช็คชื่อรายห้อง<small>CLASSROOMS</small></span>';teamTab.before(classroomTab);}
   $('#adminLogout').addEventListener('click', async () => { localStorage.removeItem('phanuang-admin'); try { await firebase.auth().signOut(); } catch (error) { console.error('[Firebase] admin sign-out error', error?.code, error); } renderAdmin(); });
   $('#adminHome').addEventListener('click', () => document.querySelector('[data-admin-tab="overview"]').click());
   document.querySelectorAll('.admin-tab').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.admin-tab').forEach((item) => item.classList.toggle('active', item === button)); const panel = $('#adminPanel'); panel.classList.remove('panel-arrive'); void panel.offsetWidth; renderAdminPanel(button.dataset.adminTab); panel.classList.add('panel-arrive'); }));
@@ -2134,6 +2138,7 @@ function renderAdmin() {
 function renderAdminOverview(host) {
   const staff=JSON.parse(localStorage.getItem('phanuang-admin')||'{}'),teamNames=Array.isArray(staff.teams)&&staff.teams.length?staff.teams.join(' · '):'ทุกฝ่ายที่ได้รับมอบหมาย';
   const jobs=[
+    ['classroom-attendance','☷','เช็คชื่อรายห้อง','เลือกห้อง → ติ๊กรายชื่อ → ซิงก์พร้อมกันได้หลายแอดมิน','เช็คหน้างาน'],
     ['activity-attendance','♟','เช็คชื่อนักกีฬา / ขบวน','เลือกฝ่าย → ติ๊กคนที่มา → ตรวจวันที่ → กดบันทึก','งานที่ใช้บ่อย'],
     ['attendance','✓','เช็คชื่อขึ้นแสตนด์','เปิดเครื่องสแกน QR หรือพิมพ์รหัสที่นั่ง แล้วบันทึกทีละคน','เช็คหน้างาน'],
     ['attendance-history','↓','ดาวน์โหลดรายงาน PDF','เลือกรอบที่ต้องการ แล้วกดดาวน์โหลด PDF','เอกสาร'],
@@ -2158,6 +2163,7 @@ function renderAdminPanel(tab) {
   const host = $('#adminPanel');
   $('#admin')?.classList.toggle('activity-fast-mode',tab==='activity-attendance');
   if (tab === 'overview') { renderAdminOverview(host); return; }
+  if (tab === 'classroom-attendance') { renderClassroomAttendance(host); return; }
   if (tab === 'activity-attendance') { renderActivityAttendance(host); return; }
   if (tab === 'members') { renderCommitteeAdmin(host); return; }
   if (tab === 'attendance-history') { renderAttendanceHistory(host); return; }
@@ -2706,6 +2712,54 @@ function enhanceStandManager(){
   $('#saveSeatStudent').onclick=async()=>{const student=filtered[+$('#seatStudentSelect').value];if(!student)return;const button=$('#saveSeatStudent'),existing=Object.entries(getStandConfig().assignments||{}).find(([seat,saved])=>seat!==activeSeat&&saved?.id===student.id);if(existing){window.alert(`${student.name} มีที่นั่ง ${existing[0]} อยู่แล้ว ไม่สามารถเพิ่มชื่อซ้ำได้`);return}button.disabled=true;try{const result=await saveStandAssignment(activeSeat,student);if(!result.saved){button.disabled=false;window.alert(`${student.name} มีที่นั่ง ${result.duplicateSeat} อยู่แล้ว ไม่สามารถเพิ่มชื่อซ้ำได้`);return}dialog.close();renderAdminPanel('attendance');showAdminToast('ผูกข้อมูลส่วนกลางแล้ว',`${activeSeat} · ${student.name}`)}catch(error){button.disabled=false;window.alert(firebaseWriteErrorMessage(error))}};
   $('#clearSeatStudent').onclick=async()=>{const button=$('#clearSeatStudent');button.disabled=true;try{await saveStandAssignment(activeSeat,null);dialog.close();renderAdminPanel('attendance')}catch(error){button.disabled=false;window.alert(firebaseWriteErrorMessage(error))}};
   $('#printSeatQr').onclick=()=>{const s=filtered[+$('#seatStudentSelect').value],img=$('#seatQr img')?.src||$('#seatQr canvas')?.toDataURL();if(!img)return;const w=open('','_blank','width=500,height=650');if(!w){alert('เบราว์เซอร์บล็อกหน้าต่างดาวน์โหลด PDF กรุณาอนุญาต Pop-up');return}w.document.write(`<title>QR ${activeSeat}</title><style>@page{size:A4 portrait;margin:15mm}body{text-align:center;font-family:sans-serif;padding:35px}img{width:280px}h1{font-size:60px;margin:10px}p{font-size:18px}</style><img src="${img}"><h1>${activeSeat}</h1><p>${escapeHTML(s?.name||'ยังไม่ระบุนักเรียน')}<br>${s?`ม.${s.room} เลขที่ ${s.number} · ${escapeHTML(s.nickname)}`:''}</p>`);w.document.close();preparePdfWindow(w,`seat-${activeSeat}-qr.pdf`,'portrait');setTimeout(()=>w.print(),400)};
+}
+
+/* Classroom attendance -------------------------------------------------------
+ * Records are keyed by date, room and student id.  Each tap is committed in a
+ * Firebase transaction, so two staff members may work in the same room without
+ * either browser overwriting names already checked by the other one.
+ */
+const CLASSROOM_ATTENDANCE_KEY='phanuang-classroom-attendance-v1';
+let classroomAttendanceView={room:'',date:''};
+function normalizeClassroomAttendance(value){return value&&typeof value==='object'&&value.records&&typeof value.records==='object'?{records:value.records}:{records:{}}}
+function getClassroomAttendanceData(){try{return normalizeClassroomAttendance(JSON.parse(localStorage.getItem(CLASSROOM_ATTENDANCE_KEY)||'{}'))}catch(_){return {records:{}}}}
+function classroomAttendanceRecord(room,date){return getClassroomAttendanceData().records?.[date]?.[room]||{marks:{}}}
+async function saveClassroomAttendanceMark(room,date,student,present){
+  if(!firebaseReady||!firebaseSyncRoot)throw Object.assign(new Error('Firebase is not ready'),{code:'firebase/not-ready'});
+  if(!firebaseAuthUser)throw Object.assign(new Error('Admin authentication is required'),{code:'auth/admin-required'});
+  const staff=JSON.parse(localStorage.getItem('phanuang-admin')||'{}');
+  const result=await firebaseSyncRoot.child(firebaseKey(CLASSROOM_ATTENDANCE_KEY)).transaction(cloud=>{
+    let data;try{data=normalizeClassroomAttendance(JSON.parse(cloud?.value||'{}'))}catch(_){data={records:{}}}
+    const existing=data.records[date]?.[room]||{marks:{}};
+    const marks={...(existing.marks||{})};
+    if(present)marks[student.id]={time:Date.now(),by:staff.name||staff.username||'admin',name:student.name};else delete marks[student.id];
+    data.records[date]={...(data.records[date]||{}),[room]:{marks,updatedAt:Date.now()}};
+    return {value:JSON.stringify(data),updatedAt:firebase.database.ServerValue.TIMESTAMP};
+  },undefined,false);
+  if(!result.committed)throw new Error('บันทึกสถานะเช็คชื่อไม่สำเร็จ');
+  const serialized=result.snapshot.val()?.value||'{"records":{}}';
+  firebaseManualWriteKeys.add(CLASSROOM_ATTENDANCE_KEY);try{localStorage.setItem(CLASSROOM_ATTENDANCE_KEY,serialized)}finally{firebaseManualWriteKeys.delete(CLASSROOM_ATTENDANCE_KEY)}
+}
+function refreshClassroomAttendanceUI(){
+  const panel=document.querySelector('.classroom-attendance-panel');if(!panel)return;
+  const {room,date}=classroomAttendanceView;if(!room||!date)return;
+  const marks=classroomAttendanceRecord(room,date).marks||{},students=CLASSROOM_DATABASE[room]?.students||[];
+  panel.querySelectorAll('[data-classroom-student]').forEach(input=>{const checked=Boolean(marks[input.dataset.classroomStudent]);input.checked=checked;const row=input.closest('.classroom-attendance-student');row?.classList.toggle('is-present',checked);const status=row?.querySelector('[data-classroom-status]');if(status)status.textContent=checked?'✓ มาแล้ว':'ยังไม่มา';});
+  const count=Object.keys(marks).filter(id=>students.some(s=>s[1]===id)).length;
+  panel.querySelectorAll('[data-classroom-present-count]').forEach(node=>node.textContent=count);
+  panel.querySelectorAll('[data-classroom-total-count]').forEach(node=>node.textContent=students.length);
+}
+function renderClassroomAttendance(host){
+  const rooms=Object.keys(CLASSROOM_DATABASE).sort(electionRoomSort),today=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+  const savedRoom=localStorage.getItem('phanuang-classroom-attendance-room');
+  const room=rooms.includes(classroomAttendanceView.room)?classroomAttendanceView.room:(rooms.includes(savedRoom)?savedRoom:rooms[0]);
+  const date=classroomAttendanceView.date||localStorage.getItem('phanuang-classroom-attendance-date')||today;
+  classroomAttendanceView={room,date};
+  const students=(CLASSROOM_DATABASE[room]?.students||[]).map(s=>({number:s[0],id:s[1],name:s[2],nickname:s[3]})),marks=classroomAttendanceRecord(room,date).marks||{},present=students.filter(s=>marks[s.id]).length;
+  host.innerHTML=`<div class="admin-panel classroom-attendance-panel"><header class="classroom-attendance-head"><div><small>CLASSROOM ATTENDANCE · LIVE SYNC</small><h3>เช็คชื่อรายห้อง</h3><p>เลือกห้อง แล้วแตะชื่อเพื่อบันทึกทันที ทุกแอดมินเห็นสถานะเดียวกันแบบเรียลไทม์</p></div><div class="classroom-attendance-stat"><b data-classroom-present-count>${present}</b><span>มาแล้ว / <i data-classroom-total-count>${students.length}</i> คน</span></div></header><section class="classroom-attendance-controls"><label><span>วันที่เช็คชื่อ</span><input id="classroomAttendanceDate" type="date" value="${date}"></label><div><small>เลือกห้องเรียน</small><nav class="classroom-room-tabs" aria-label="เลือกห้องเรียน">${rooms.map(item=>`<button type="button" data-classroom-room="${escapeAttribute(item)}" class="${item===room?'active':''}"><b>ม.${escapeHTML(item)}</b><span>${CLASSROOM_DATABASE[item].students.length} คน</span></button>`).join('')}</nav></div></section><section class="classroom-attendance-list" aria-live="polite"><header><div><small>ROOM M.${escapeHTML(room)}</small><h4>รายชื่อนักเรียน</h4></div><span><b data-classroom-present-count>${present}</b> / <b data-classroom-total-count>${students.length}</b> คน</span></header><div class="classroom-student-grid">${students.map((student,index)=>`<label class="classroom-attendance-student ${marks[student.id]?'is-present':''}"><input type="checkbox" data-classroom-student="${escapeAttribute(student.id)}" ${marks[student.id]?'checked':''}><i>${escapeHTML(student.number||String(index+1))}</i><span><b>${escapeHTML(student.name)}</b><small>${student.nickname&&student.nickname!=='—'?escapeHTML(student.nickname):'รหัส'} · ${escapeHTML(student.id)}</small></span><em data-classroom-status>${marks[student.id]?'✓ มาแล้ว':'ยังไม่มา'}</em></label>`).join('')}</div></section><footer class="classroom-attendance-foot"><i></i><span>บันทึกทีละรายชื่อด้วยระบบป้องกันข้อมูลชนกัน — แอดมินหลายคนเช็คพร้อมกันได้</span></footer></div>`;
+  host.querySelectorAll('[data-classroom-room]').forEach(button=>button.addEventListener('click',()=>{classroomAttendanceView.room=button.dataset.classroomRoom;localStorage.setItem('phanuang-classroom-attendance-room',classroomAttendanceView.room);renderClassroomAttendance(host)}));
+  $('#classroomAttendanceDate').addEventListener('change',event=>{classroomAttendanceView.date=event.target.value||today;localStorage.setItem('phanuang-classroom-attendance-date',classroomAttendanceView.date);renderClassroomAttendance(host)});
+  host.querySelectorAll('[data-classroom-student]').forEach(input=>input.addEventListener('change',async()=>{const student=students.find(item=>item.id===input.dataset.classroomStudent);if(!student)return;const row=input.closest('.classroom-attendance-student'),next=input.checked;input.disabled=true;row?.classList.toggle('is-saving',true);try{await saveClassroomAttendanceMark(room,date,student,next);refreshClassroomAttendanceUI()}catch(error){input.checked=!next;row?.classList.toggle('is-present',!next);window.alert(adminSaveErrorMessage(error))}finally{input.disabled=false;row?.classList.remove('is-saving')}}));
 }
 
 const ACTIVITY_DATA_KEY='phanuang-activity-attendance';
